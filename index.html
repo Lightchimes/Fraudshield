@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FraudShield — Scam Detector MVP</title>
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#f4f7fb;color:#172033}
+  header{background:#101a35;color:white;padding:28px 18px;text-align:center}
+  header h1{margin:0 0 8px;font-size:32px}
+  header p{margin:0;color:#d8def0}
+  .wrap{max-width:900px;margin:28px auto;padding:0 16px}
+  .card{background:white;border-radius:16px;padding:22px;margin-bottom:18px;box-shadow:0 8px 25px rgba(20,35,70,.08)}
+  .tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+  button,.tab{border:0;border-radius:10px;padding:12px;cursor:pointer;font-weight:700}
+  .tab{background:#e9edf5;color:#25304a}
+  .tab.active{background:#101a35;color:white}
+  textarea,input{width:100%;padding:14px;border:1px solid #cfd6e4;border-radius:10px;font-size:16px;margin-top:10px}
+  textarea{min-height:150px;resize:vertical}
+  .primary{background:#c99528;color:white;width:100%;margin-top:12px;font-size:16px}
+  .result{display:none;margin-top:20px;padding:18px;border-radius:12px;background:#f6f8fc}
+  .score{font-size:42px;font-weight:800}
+  .low{color:#16803a}.medium{color:#a36a00}.high{color:#b42318}
+  ul{line-height:1.7}
+  .small{font-size:13px;color:#65708a}
+  footer{text-align:center;color:#68738a;padding:20px}
+</style>
+</head>
+<body>
+<header>
+  <h1>FraudShield</h1>
+  <p>AI-assisted scam screening for websites, messages, phone numbers and accounts.</p>
+</header>
+
+<div class="wrap">
+  <div class="card">
+    <div class="tabs">
+      <button class="tab active" data-type="url">Website</button>
+      <button class="tab" data-type="message">Message/Email</button>
+      <button class="tab" data-type="phone">Phone</button>
+      <button class="tab" data-type="account">Account</button>
+    </div>
+
+    <label id="label" style="display:block;margin-top:20px;font-weight:700">Paste a website URL</label>
+    <textarea id="input" placeholder="Example: https://example.com"></textarea>
+    <button class="primary" id="check">CHECK FOR SCAM SIGNALS</button>
+    <p class="small">This MVP gives a screening/risk assessment. It does not prove that a person, website or account is fraudulent.</p>
+
+    <div class="result" id="result">
+      <div>Risk score</div>
+      <div class="score" id="score"></div>
+      <div id="level" style="font-weight:800;margin:8px 0"></div>
+      <strong>Signals found:</strong>
+      <ul id="signals"></ul>
+      <div id="advice"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Next version</h2>
+    <ul>
+      <li>Real threat-intelligence checks for suspicious URLs.</li>
+      <li>AI analysis of scam emails and social-engineering messages.</li>
+      <li>Telegram bot with <code>/check</code> commands.</li>
+      <li>User accounts, history and a database.</li>
+      <li>Optional paid premium checks using Telegram Stars.</li>
+    </ul>
+  </div>
+</div>
+<footer>FraudShield MVP • Built as a defensive anti-fraud prototype</footer>
+
+<script>
+const tabs = document.querySelectorAll(".tab");
+const input = document.getElementById("input");
+const label = document.getElementById("label");
+let type = "url";
+
+const prompts = {
+  url:["Paste a website URL","Example: https://example.com"],
+  message:["Paste an email, SMS or social-media message","Example: Your account will be closed today. Send your OTP now..."],
+  phone:["Enter a phone number or call details","Example: +234 801 234 5678"],
+  account:["Paste an account/profile URL or profile details","Example: profile URL, username, bio and suspicious message"]
+};
+
+tabs.forEach(t=>{
+  t.onclick=()=>{
+    tabs.forEach(x=>x.classList.remove("active"));
+    t.classList.add("active");
+    type=t.dataset.type;
+    label.textContent=prompts[type][0];
+    input.placeholder=prompts[type][1];
+    input.value="";
+    document.getElementById("result").style.display="none";
+  };
+});
+
+function analyze(text,type){
+  const s=text.toLowerCase();
+  let score=0, signals=[];
+
+  if(!text.trim()) return {score:0,signals:["Nothing was entered."],advice:"Enter something to check."};
+
+  if(type==="url"){
+    try{
+      const u=new URL(text.includes("://")?text:"https://"+text);
+      const host=u.hostname;
+      if(!u.hostname.includes(".")){score+=20;signals.push("Unusual domain format.");}
+      if(u.protocol!=="https:"){score+=15;signals.push("The address does not use HTTPS.");}
+      if(host.includes("xn--")){score+=25;signals.push("Internationalized/punycode domain detected.");}
+      if((host.match(/-/g)||[]).length>=3){score+=10;signals.push("Many hyphens in the domain can be a phishing signal.");}
+      if(/\d{5,}/.test(host)){score+=10;signals.push("Large numeric sequence appears in the domain.");}
+      if(/login|verify|secure|wallet|bonus|gift|claim|update|support|account/.test(host)){
+        score+=10;signals.push("Domain contains words commonly used in impersonation/phishing links.");
+      }
+      if(u.username || u.password){score+=25;signals.push("URL contains embedded login credentials.");}
+    }catch(e){score+=40;signals.push("The input does not look like a normal URL.");}
+  }
+
+  if(type==="message"){
+    const patterns=[
+      [/urgent|immediately|act now|within \d+ hours?/i,18,"Urgency/pressure language detected."],
+      [/otp|one[- ]time password|verification code/i,22,"The message asks for or mentions an OTP/verification code."],
+      [/password|passcode|pin/i,20,"Password/PIN language detected."],
+      [/send money|transfer|pay now|payment|fee/i,20,"Money/payment request detected."],
+      [/click here|tap here|open this link/i,12,"Link-clicking instruction detected."],
+      [/congratulations|you won|prize|lottery|bonus/i,18,"Prize/bonus language can be used in scams."],
+      [/police|court|arrest|fine|tax|customs/i,15,"Threat/authority language detected."]
+    ];
+    patterns.forEach(([re,pts,msg])=>{if(re.test(s)){score+=pts;signals.push(msg);}});
+    if(/https?:\/\/|www\./i.test(text)){score+=12;signals.push("A web link is present; verify its destination before opening.");}
+  }
+
+  if(type==="phone"){
+    if(!/\d{7,}/.test(text)){score+=10;signals.push("No normal phone-number pattern was detected.");}
+    if(/otp|verification code|password|pin/i.test(s)){score+=25;signals.push("Sensitive authentication information is mentioned.");}
+    if(/urgent|arrest|police|bank|account|transfer|money/i.test(s)){score+=18;signals.push("High-pressure, financial or authority language detected.");}
+  }
+
+  if(type==="account"){
+    if(/urgent|send money|investment|crypto|loan|giveaway|prize|otp|password/i.test(s)){
+      score+=25;signals.push("Profile/message contains common scam themes.");
+    }
+    if(/telegram|whatsapp|instagram|facebook|tiktok/i.test(s)){score+=3;signals.push("Social-platform information detected; verify the account independently.");}
+    if(/new account|newly created|recently created/i.test(s)){score+=15;signals.push("A recently-created account is mentioned.");}
+  }
+
+  score=Math.min(100,score);
+  if(!signals.length) signals.push("No obvious scam signal was detected by this basic rule set.");
+  let level=score>=60?"HIGH RISK":score>=30?"MEDIUM RISK":"LOWER RISK";
+  let advice=score>=60
+    ?"Do not send money, OTPs, passwords or other sensitive information. Verify through an official channel."
+    :score>=30
+    ?"Be cautious. Verify the sender, domain and request independently before taking action."
+    :"No strong signal was found by this MVP. Still verify important requests independently.";
+
+  return {score,signals,level,advice};
+}
+
+document.getElementById("check").onclick=()=>{
+  const r=analyze(input.value,type);
+  document.getElementById("result").style.display="block";
+  const scoreEl=document.getElementById("score");
+  scoreEl.textContent=r.score+"/100";
+  scoreEl.className="score "+(r.score>=60?"high":r.score>=30?"medium":"low");
+  document.getElementById("level").textContent=r.level;
+  const ul=document.getElementById("signals");
+  ul.innerHTML="";
+  r.signals.forEach(x=>{const li=document.createElement("li");li.textContent=x;ul.appendChild(li);});
+  document.getElementById("advice").textContent=r.advice;
+};
+</script>
+</body>
+</html>
