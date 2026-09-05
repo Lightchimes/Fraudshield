@@ -66,7 +66,42 @@ function getRisk(score, signals) {
         diagnostic: responseText.slice(0, 300)
       };
     }
+    let data;
 
+    try {
+      data = JSON.parse(responseText);
+    } catch {
+      return {
+        found: false,
+        available: false,
+        status: response.status,
+        diagnostic: responseText.slice(0, 300)
+      };
+    }
+
+    const result = data.results;
+
+    return {
+      found:
+        result?.in_database === true &&
+        (
+          result?.valid === true ||
+          result?.valid === "y"
+        ),
+      available: true,
+      status: response.status,
+      in_database: result?.in_database ?? null,
+      valid: result?.valid ?? null
+    };
+
+  } catch (error) {
+    return {
+      found: false,
+      available: false,
+      error: error.message
+    };
+  }
+}
 async function analyzeWebsite(input) {
   const text = input.trim();
   let score = 0;
