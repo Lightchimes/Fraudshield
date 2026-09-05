@@ -79,7 +79,7 @@ async function checkPhishTank(url) {
     };
   }
 }
-function analyzeWebsite(input) {
+async function analyzeWebsite(input) {
   const text = input.trim();
   let score = 0;
   const signals = [];
