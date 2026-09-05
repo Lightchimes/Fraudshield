@@ -37,7 +37,7 @@ function getRisk(score, signals) {
         : "No major warning signs were detected, but always verify before sharing sensitive information."
   };
 }
- async function checkPhishTank(url) {
+ asynasync function checkPhishTank(url) {
   try {
     const form = new URLSearchParams();
 
@@ -55,6 +55,51 @@ function getRisk(score, signals) {
         body: form.toString()
       }
     );
+
+    const responseText = await response.text();
+
+    if (!response.ok) {
+      return {
+        found: false,
+        available: false,
+        status: response.status,
+        diagnostic: responseText.slice(0, 300)
+      };
+    }
+
+    let data;
+
+    try {
+      data = JSON.parse(responseText);
+    } catch {
+      return {
+        found: false,
+        available: false,
+        status: response.status,
+        diagnostic: responseText.slice(0, 300)
+      };
+    }
+
+    const result = data.results;
+
+    return {
+      found:
+        result?.in_database === true &&
+        (result?.valid === true || result?.valid === "y"),
+      available: true,
+      status: response.status,
+      in_database: result?.in_database ?? null,
+      valid: result?.valid ?? null
+    };
+
+  } catch (error) {
+    return {
+      found: false,
+      available: false,
+      error: error.message
+    };
+  }
+}
 
     if (!response.ok) {
   return {
