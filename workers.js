@@ -37,7 +37,7 @@ function getRisk(score, signals) {
         : "No major warning signs were detected, but always verify before sharing sensitive information."
   };
 }
- asynasync function checkPhishTank(url) {
+ async function checkPhishTank(url) {
   try {
     const form = new URLSearchParams();
 
