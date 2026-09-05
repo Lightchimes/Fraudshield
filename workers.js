@@ -262,7 +262,28 @@ if (threat.found) {
       "This is a URL-shortening service, so the final destination is hidden until the link is followed."
     );
   }
+  // Suspicious domain patterns
+  const suspiciousDomainPatterns = [
+    "login-",
+    "verify-",
+    "secure-",
+    "account-",
+    "update-",
+    "confirm-",
+    "-login",
+    "-verify",
+    "-secure",
+    "-account",
+    "-update",
+    "-confirm"
+  ];
 
+  if (suspiciousDomainPatterns.some(pattern => hostname.includes(pattern))) {
+    score += 20;
+    signals.push(
+      "The domain contains patterns commonly used by deceptive login, verification, or account-update websites."
+    );
+  }
   const risk = getRisk(score, signals);
 
 return {
