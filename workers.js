@@ -121,6 +121,10 @@ const threat = await checkPhishTank(text);
 if (threat.found) {
   score += 50;
   signals.push("PhishTank reports this URL as a verified phishing URL.");
+} else if (!threat.available) {
+  signals.push(
+    "External phishing intelligence was unavailable. This result is based on FraudShield's own analysis."
+  );
 }
   const hostname = url.hostname.toLowerCase();
   const full = text.toLowerCase();
