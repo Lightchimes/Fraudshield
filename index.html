@@ -797,6 +797,114 @@ result.advice;
 };
 
 </script>
+<script>
+const FRAUDSHIELD_API =
+  "https://fraudshield-api.lightchimes.workers.dev";
 
+const oldCheckButton = document.getElementById("check");
+
+oldCheckButton.onclick = async function () {
+
+  const text = input.value.trim();
+
+  if (!text) {
+    alert("Please enter something to check.");
+    return;
+  }
+
+  oldCheckButton.textContent = "CHECKING...";
+  oldCheckButton.disabled = true;
+
+  try {
+
+    let apiType = type;
+
+    if (type === "url") {
+      apiType = "website";
+    }
+
+    const response = await fetch(FRAUDSHIELD_API, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        type: apiType,
+        input: text
+      })
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      throw new Error(result.error || "API request failed.");
+    }
+
+    const resultBox =
+      document.getElementById("result");
+
+    const scoreEl =
+      document.getElementById("score");
+
+    const levelEl =
+      document.getElementById("level");
+
+    const signalsEl =
+      document.getElementById("signals");
+
+    const adviceEl =
+      document.getElementById("advice");
+
+    resultBox.style.display = "block";
+
+    scoreEl.textContent =
+      result.score + "/100";
+
+    scoreEl.className =
+      "score " +
+      (
+        result.score >= 60
+          ? "high"
+          : result.score >= 30
+          ? "medium"
+          : "low"
+      );
+
+    levelEl.textContent =
+      result.level;
+
+    signalsEl.innerHTML = "";
+
+    result.signals.forEach(signal => {
+
+      const li =
+        document.createElement("li");
+
+      li.textContent = signal;
+
+      signalsEl.appendChild(li);
+
+    });
+
+    adviceEl.textContent =
+      result.advice;
+
+  } catch (error) {
+
+    alert(
+      "FraudShield API could not be reached. Please try again."
+    );
+
+  } finally {
+
+    oldCheckButton.textContent =
+      "CHECK FOR SCAM SIGNALS";
+
+    oldCheckButton.disabled = false;
+
+  }
+
+};
+</script>
 </body>
 </html>
