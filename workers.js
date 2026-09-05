@@ -93,7 +93,12 @@ async function analyzeWebsite(input) {
       "This does not appear to be a valid website address."
     ]);
   }
+const threat = await checkPhishTank(text);
 
+if (threat.found) {
+  score += 50;
+  signals.push("PhishTank reports this URL as a verified phishing URL.");
+}
   const hostname = url.hostname.toLowerCase();
   const full = text.toLowerCase();
 
