@@ -390,7 +390,7 @@ export default {
       let result;
 
       if (type === "website") {
-        result = analyzeWebsite(input);
+        result = await analyzeWebsite(input);
       } else if (
         type === "message" ||
         type === "email"
