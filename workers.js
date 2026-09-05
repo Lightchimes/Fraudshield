@@ -85,6 +85,8 @@ function getRisk(score, signals) {
     error: error.message
   };
 }
+}
+async function analyzeWebsite(input) {
 async function analyzeWebsite(input) {
   const text = input.trim();
   let score = 0;
