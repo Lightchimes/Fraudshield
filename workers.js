@@ -37,15 +37,15 @@ function getRisk(score, signals) {
         : "No major warning signs were detected, but always verify before sharing sensitive information."
   };
 }
-async function checkPhishTank(url) {
+async async function checkPhishTank(url) {
   try {
     const form = new URLSearchParams();
 
     form.append("url", url);
     form.append("format", "json");
 
-    const check = await fetch(
-      "https://checkurl.phishtank.com/checkurl/",
+    const response = await fetch(
+      "http://checkurl.phishtank.com/checkurl/",
       {
         method: "POST",
         headers: {
@@ -56,23 +56,28 @@ async function checkPhishTank(url) {
       }
     );
 
-    if (!check.ok) {
+    if (!response.ok) {
       return {
         found: false,
         available: false
       };
     }
 
-    const data = await check.json();
+    const data = await response.json();
+
+    const result = data.results;
 
     return {
       found:
-        data.results?.in_database === true &&
-        data.results?.valid === true,
+        result?.in_database === true &&
+        (
+          result?.valid === true ||
+          result?.valid === "y"
+        ),
       available: true
     };
 
-  } catch {
+  } catch (error) {
     return {
       found: false,
       available: false
