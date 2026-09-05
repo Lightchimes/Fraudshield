@@ -37,7 +37,48 @@ function getRisk(score, signals) {
         : "No major warning signs were detected, but always verify before sharing sensitive information."
   };
 }
+async function checkPhishTank(url) {
+  try {
+    const form = new URLSearchParams();
 
+    form.append("url", url);
+    form.append("format", "json");
+
+    const check = await fetch(
+      "https://checkurl.phishtank.com/checkurl/",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+          "User-Agent": "FraudShield/2.0"
+        },
+        body: form.toString()
+      }
+    );
+
+    if (!check.ok) {
+      return {
+        found: false,
+        available: false
+      };
+    }
+
+    const data = await check.json();
+
+    return {
+      found:
+        data.results?.in_database === true &&
+        data.results?.valid === true,
+      available: true
+    };
+
+  } catch {
+    return {
+      found: false,
+      available: false
+    };
+  }
+}
 function analyzeWebsite(input) {
   const text = input.trim();
   let score = 0;
