@@ -57,11 +57,12 @@ function getRisk(score, signals) {
     );
 
     if (!response.ok) {
-      return {
-        found: false,
-        available: false
-      };
-    }
+  return {
+    found: false,
+    available: false,
+    status: response.status
+  };
+}
 
     const data = await response.json();
 
@@ -78,11 +79,11 @@ function getRisk(score, signals) {
     };
 
   } catch (error) {
-    return {
-      found: false,
-      available: false
-    };
-  }
+  return {
+    found: false,
+    available: false,
+    error: error.message
+  };
 }
 async function analyzeWebsite(input) {
   const text = input.trim();
