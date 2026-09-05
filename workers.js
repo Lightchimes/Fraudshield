@@ -289,7 +289,12 @@ if (threat.found) {
     );
   }
 
-  return getRisk(score, signals);
+  const risk = getRisk(score, signals);
+
+return {
+  ...risk,
+  phishTank: threat
+};
 }
 
 function analyzeMessage(input) {
