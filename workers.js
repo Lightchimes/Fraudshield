@@ -137,18 +137,6 @@ if (threat.found) {
       hostname === domain ||
       hostname.endsWith("." + domain)
   );
-const hostnameLabels = hostname.split(".");
-
-
-    const isOfficial = officialDomains.some(
-      domain =>
-        hostname === domain ||
-        hostname.endsWith("." + domain)
-    );
-
-    return brandInHostname && !isOfficial;
-  }
-);
 const officialBrandDomains = {
   paypal: ["paypal.com"],
   facebook: ["facebook.com"],
@@ -178,11 +166,12 @@ const suspiciousBrandMatch = Object.entries(officialBrandDomains).some(
 
     return brandInHostname && !isOfficial;
   }
+);
 
 if (suspiciousBrandMatch) {
   score += 25;
   signals.push(
-    "The domain contains a major brand name but may not be an official domain."
+    "The hostname contains a major brand name but is not on FraudShield's official-domain allowlist."
   );
 }
   if (knownMalicious) {
