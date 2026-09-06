@@ -137,7 +137,32 @@ if (threat.found) {
       hostname === domain ||
       hostname.endsWith("." + domain)
   );
+const lookalikeBrands = [
+  "paypal",
+  "facebook",
+  "instagram",
+  "whatsapp",
+  "telegram",
+  "microsoft",
+  "google",
+  "apple",
+  "amazon",
+  "binance"
+];
 
+const suspiciousBrandMatch = lookalikeBrands.some(
+  brand =>
+    hostname.includes(brand) &&
+    !hostname.endsWith("." + brand + ".com") &&
+    !hostname.endsWith("." + brand + ".org")
+);
+
+if (suspiciousBrandMatch) {
+  score += 25;
+  signals.push(
+    "The domain contains a major brand name but may not be an official domain."
+  );
+}
   if (knownMalicious) {
     score += 80;
     signals.push(
