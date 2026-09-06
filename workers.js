@@ -139,7 +139,7 @@ if (threat.found) {
   );
 
   if (knownMalicious) {
-    score += 60;
+    score += 80;
     signals.push(
       "This domain is on FraudShield's known malicious-domain list."
     );
