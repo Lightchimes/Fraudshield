@@ -137,6 +137,43 @@ if (threat.found) {
       hostname === domain ||
       hostname.endsWith("." + domain)
   );
+  const officialBrandDomains = {
+  paypal: ["paypal.com"],
+  facebook: ["facebook.com"],
+  instagram: ["instagram.com"],
+  whatsapp: ["whatsapp.com"],
+  telegram: ["telegram.org"],
+  microsoft: ["microsoft.com", "live.com", "office.com", "microsoftonline.com"],
+  google: ["google.com"],
+  apple: ["apple.com", "icloud.com"],
+  amazon: ["amazon.com"],
+  binance: ["binance.com"]
+};
+
+const hostnameLabels = hostname.split(".");
+
+const suspiciousBrandMatch = Object.entries(officialBrandDomains).some(
+  ([brand, officialDomains]) => {
+    const brandInHostname = hostnameLabels.some(label =>
+      label.includes(brand)
+    );
+
+    const isOfficial = officialDomains.some(
+      domain =>
+        hostname === domain ||
+        hostname.endsWith("." + domain)
+    );
+
+    return brandInHostname && !isOfficial;
+  }
+);
+
+if (suspiciousBrandMatch) {
+  score += 25;
+  signals.push(
+    "The hostname contains a major brand name but is not on FraudShield's official-domain allowlist."
+  );
+}
 if (suspiciousBrandMatch) {
   score += 25;
   signals.push(
