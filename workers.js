@@ -127,6 +127,23 @@ if (threat.found) {
   );
 }
   const hostname = url.hostname.toLowerCase();
+    // Known malicious domains
+  const knownMaliciousDomains = [
+    "qujqmtk.com"
+  ];
+
+  const knownMalicious = knownMaliciousDomains.some(
+    domain =>
+      hostname === domain ||
+      hostname.endsWith("." + domain)
+  );
+
+  if (knownMalicious) {
+    score += 60;
+    signals.push(
+      "This domain is on FraudShield's known malicious-domain list."
+    );
+  }
   const full = text.toLowerCase();
 
   // HTTPS
