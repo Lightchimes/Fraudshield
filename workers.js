@@ -995,6 +995,63 @@ async function analyzePhone(input) {
       "No obvious risk indicators were detected from the phone number itself."
     );
   }
+  // IPQS phone reputation check
+  try {
+    const response = await fetch(
+      `https://www.ipqualityscore.com/api/json/phone/${env.IPQS_API_KEY}/${encodeURIComponent(digits)}`
+    );
+
+    if (response.ok) {
+      const data = await response.json();
+
+      if (data.success) {
+        if (data.fraud_score !== undefined) {
+          score += Math.round(Number(data.fraud_score) * 0.6);
+          signals.push(
+            `IPQS phone reputation score: ${data.fraud_score}/100.`
+          );
+        }
+
+        if (data.spammer === true) {
+          score += 25;
+          signals.push(
+            "IPQS identifies this number as associated with spam activity."
+          );
+        }
+
+        if (data.risky === true) {
+          score += 20;
+          signals.push(
+            "IPQS identifies this number as potentially risky."
+          );
+        }
+
+        if (data.voip === true) {
+          signals.push(
+            "IPQS identifies this number as a VoIP number."
+          );
+        }
+
+        if (data.active_status === false) {
+          signals.push(
+            "IPQS indicates that this number may not currently be active."
+          );
+        }
+      } else {
+        signals.push(
+          "IPQS could not complete a reputation check for this number."
+        );
+      }
+    } else {
+      signals.push(
+        "IPQS phone reputation service was unavailable."
+      );
+    }
+  } catch (error) {
+    signals.push(
+      "IPQS phone reputation check could not be completed."
+    );
+  }
 
   return getRisk(score, signals);
 }
