@@ -373,6 +373,7 @@ function analyzeMessage(input) {
 
   const money = [
     "send money",
+    "send me",
     "transfer",
     "payment",
     "fee",
@@ -383,9 +384,10 @@ function analyzeMessage(input) {
     "wallet",
     "deposit",
     "cash",
-    "funds"
+    "funds",
+    "₦",
+    "naira"
   ];
-
   const credentials = [
     "password",
     "pin",
