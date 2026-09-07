@@ -685,7 +685,7 @@ const secrecy = [
   }
   return getRisk(score, signals);
 }
-async function analyzePhone(input) {
+async function analyzePhone(input, env) {
   const text = input.trim();
   const digits = text.replace(/[^\d+]/g, "");
   const numberOnly = digits.replace(/\D/g, "");
