@@ -680,6 +680,54 @@ function analyzeMessage(input) {
       "The message combines an investment promise with a link."
     );
   }
+    // Emergency money scam detection
+  const emergencyMoney = [
+    "stranded",
+    "emergency",
+    "hospital",
+    "accident",
+    "stolen",
+    "lost my phone",
+    "need money",
+    "borrow me",
+    "lend me",
+    "send me money"
+  ];
+
+  const secrecy = [
+    "keep this secret",
+    "keep it secret",
+    "don't tell anyone",
+    "do not tell anyone",
+    "keep this between us",
+    "tell nobody",
+    "don't share this"
+  ];
+
+  const foundEmergencyMoney = emergencyMoney.filter(word =>
+    lower.includes(word)
+  );
+
+  const foundSecrecy = secrecy.filter(word =>
+    lower.includes(word)
+  );
+
+  if (
+    foundEmergencyMoney.length > 0 &&
+    foundMoney.length > 0
+  ) {
+    score += 25;
+    signals.push(
+      "The message uses an emergency or personal crisis to request financial help."
+    );
+  }
+
+  if (foundSecrecy.length > 0) {
+    score += 15;
+    signals.push(
+      "The message pressures the recipient to keep the communication secret."
+    );
+  }
   return getRisk(score, signals);
 }
 export default {
