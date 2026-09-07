@@ -1001,7 +1001,7 @@ const ipqsNumber =
   // IPQS phone reputation check
   try {
     const response = await fetch(
-      `https://www.ipqualityscore.com/api/json/phone/${env.IPQS_API_KEY}/${encodeURIComponent(digits)}`
+      `https://www.ipqualityscore.com/api/json/phone/${env.IPQS_API_KEY}/${encodeURIComponent(ipqsNumber)}`
     );
 
     if (response.ok) {
