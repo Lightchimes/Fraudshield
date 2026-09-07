@@ -1094,9 +1094,19 @@ export default {
 
       let result;
 
-      if (type === "website") {
+if (type === "website") {
   result = await analyzeWebsite(input);
 } else if (type === "phone") {
+  result = await analyzePhone(input, env);
+} else if (
+  type === "message" ||
+  type === "email"
+) {
+  result = analyzeMessage(input);
+} else {
+  result = analyzeMessage(input);
+}
+else if (type === "phone") {
   result = await analyzePhone(input, env);
 }
 } else if (
