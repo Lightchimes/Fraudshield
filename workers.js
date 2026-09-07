@@ -689,7 +689,10 @@ async function analyzePhone(input, env) {
   const text = input.trim();
   const digits = text.replace(/[^\d+]/g, "");
   const numberOnly = digits.replace(/\D/g, "");
-
+const ipqsNumber =
+  digits.startsWith("0") && numberOnly.length === 11
+    ? "+234" + numberOnly.slice(1)
+    : digits;
   let score = 0;
   const signals = [];
 
