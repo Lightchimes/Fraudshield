@@ -366,7 +366,9 @@ function analyzeMessage(input) {
     "last chance",
     "suspended",
     "expires",
-    "final warning"
+    "final warning",
+    "respond now",
+    "right away"
   ];
 
   const money = [
@@ -379,7 +381,9 @@ function analyzeMessage(input) {
     "crypto",
     "investment",
     "wallet",
-    "deposit"
+    "deposit",
+    "cash",
+    "funds"
   ];
 
   const credentials = [
@@ -389,7 +393,9 @@ function analyzeMessage(input) {
     "verification code",
     "login",
     "signin",
-    "security code"
+    "security code",
+    "one-time password",
+    "passcode"
   ];
 
   const prizes = [
@@ -400,7 +406,8 @@ function analyzeMessage(input) {
     "reward",
     "free",
     "giveaway",
-    "lottery"
+    "lottery",
+    "congratulations"
   ];
 
   const links = [
@@ -408,59 +415,154 @@ function analyzeMessage(input) {
     "https://",
     "www.",
     "bit.ly",
-    "tinyurl"
+    "tinyurl",
+    "t.co",
+    "cutt.ly"
   ];
 
-  if (urgency.some(word => lower.includes(word))) {
+  const threats = [
+    "account will be closed",
+    "account will be deleted",
+    "account has been suspended",
+    "account is suspended",
+    "lose access",
+    "blocked",
+    "terminated",
+    "legal action",
+    "police",
+    "arrest",
+    "fine"
+  ];
+
+  const impersonation = [
+    "customer service",
+    "support team",
+    "security team",
+    "bank staff",
+    "official representative",
+    "verify your identity",
+    "confirm your identity"
+  ];
+
+  const requests = [
+    "send",
+    "transfer",
+    "click",
+    "open",
+    "reply",
+    "call",
+    "contact",
+    "share",
+    "provide",
+    "confirm",
+    "verify",
+    "pay"
+  ];
+
+  const foundUrgency = urgency.filter(word => lower.includes(word));
+  const foundMoney = money.filter(word => lower.includes(word));
+  const foundCredentials = credentials.filter(word => lower.includes(word));
+  const foundPrizes = prizes.filter(word => lower.includes(word));
+  const foundLinks = links.filter(word => lower.includes(word));
+  const foundThreats = threats.filter(word => lower.includes(word));
+  const foundImpersonation = impersonation.filter(word =>
+    lower.includes(word)
+  );
+  const foundRequests = requests.filter(word =>
+    lower.includes(word)
+  );
+
+  if (foundUrgency.length > 0) {
     score += 20;
     signals.push(
       "The message creates urgency or pressure to act quickly."
     );
   }
 
-  if (money.some(word => lower.includes(word))) {
+  if (foundMoney.length > 0) {
     score += 20;
     signals.push(
       "The message involves money, payment, banking, investment, or transfers."
     );
   }
 
-  if (credentials.some(word => lower.includes(word))) {
+  if (foundCredentials.length > 0) {
     score += 25;
     signals.push(
-      "The message asks about passwords, PINs, OTPs, verification codes, or login information."
+      "The message asks for passwords, PINs, OTPs, verification codes, or other login information."
     );
   }
 
-  if (prizes.some(word => lower.includes(word))) {
+  if (foundPrizes.length > 0) {
     score += 15;
     signals.push(
       "The message contains prize, reward, bonus, lottery, or free-offer language."
     );
   }
 
-  if (links.some(word => lower.includes(word))) {
+  if (foundLinks.length > 0) {
     score += 15;
     signals.push(
       "The message contains a link. Verify the destination before opening it."
     );
   }
 
+  if (foundThreats.length > 0) {
+    score += 20;
+    signals.push(
+      "The message uses threats, account suspension, loss of access, or legal consequences to pressure the recipient."
+    );
+  }
+
+  if (foundImpersonation.length > 0) {
+    score += 15;
+    signals.push(
+      "The message may be impersonating a support, security, banking, or official representative."
+    );
+  }
+
   if (
-    (lower.includes("send") || lower.includes("transfer")) &&
-    (lower.includes("otp") ||
-      lower.includes("password") ||
-      lower.includes("pin"))
+    foundRequests.length > 0 &&
+    foundCredentials.length > 0
   ) {
     score += 20;
     signals.push(
-      "The message combines a request for money or action with sensitive security information."
+      "The message combines a request for action with sensitive security information."
+    );
+  }
+
+  if (
+    foundUrgency.length > 0 &&
+    foundMoney.length > 0
+  ) {
+    score += 20;
+    signals.push(
+      "The message combines urgency with a financial request."
+    );
+  }
+
+  if (
+    foundUrgency.length > 0 &&
+    foundCredentials.length > 0
+  ) {
+    score += 20;
+    signals.push(
+      "The message combines urgency with a request involving sensitive credentials."
+    );
+  }
+
+  if (
+    foundPrizes.length > 0 &&
+    foundMoney.length > 0
+  ) {
+    score += 15;
+    signals.push(
+      "The message combines a prize or reward claim with financial language."
     );
   }
 
   return getRisk(score, signals);
 }
-
 export default {
   async fetch(request) {
     if (request.method === "OPTIONS") {
