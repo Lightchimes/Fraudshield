@@ -1092,32 +1092,20 @@ export default {
         );
       }
 
-      let result;
+        let result;
 
-if (type === "website") {
-  result = await analyzeWebsite(input);
-} else if (type === "phone") {
-  result = await analyzePhone(input, env);
-} else if (
-  type === "message" ||
-  type === "email"
-) {
-  result = analyzeMessage(input);
-} else {
-  result = analyzeMessage(input);
-}
-else if (type === "phone") {
-  result = await analyzePhone(input, env);
-}
-} else if (
-  type === "message" ||
-  type === "email"
-) {
-  result = analyzeMessage(input);
-} else {
-  result = analyzeMessage(input);
-}
-
+      if (type === "website") {
+        result = await analyzeWebsite(input);
+      } else if (type === "phone") {
+        result = await analyzePhone(input, env);
+      } else if (
+        type === "message" ||
+        type === "email"
+      ) {
+        result = analyzeMessage(input);
+      } else {
+        result = analyzeMessage(input);
+      }
       return response(result);
 
     } catch (error) {
