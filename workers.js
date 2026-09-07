@@ -550,7 +550,6 @@ function analyzeMessage(input) {
       "The message combines urgency with a request involving sensitive credentials."
     );
   }
-
   if (
     foundPrizes.length > 0 &&
     foundMoney.length > 0
@@ -560,16 +559,8 @@ function analyzeMessage(input) {
       "The message combines a prize or reward claim with financial language."
     );
   }
-  if (
-    foundInvestmentPromises.length > 0 &&
-    foundLinks.length > 0
-  ) {
-    score += 20;
-    signals.push(
-      "The message combines an investment promise with a link."
-    );
-  }
-    // Emergency money scam detection
+
+  // Advanced scam patterns
   const emergencyMoney = [
     "stranded",
     "emergency",
@@ -583,6 +574,29 @@ function analyzeMessage(input) {
     "send me money"
   ];
 
+  const investmentPromises = [
+    "guaranteed profit",
+    "guaranteed returns",
+    "double your money",
+    "make money fast",
+    "risk free",
+    "no risk",
+    "huge returns",
+    "daily profit",
+    "instant profit"
+  ];
+
+  const jobScam = [
+    "work from home",
+    "easy money",
+    "earn daily",
+    "job offer",
+    "employment opportunity",
+    "registration fee",
+    "processing fee",
+    "pay to get the job"
+  ];
+
   const secrecy = [
     "keep this secret",
     "keep it secret",
@@ -594,6 +608,14 @@ function analyzeMessage(input) {
   ];
 
   const foundEmergencyMoney = emergencyMoney.filter(word =>
+    lower.includes(word)
+  );
+
+  const foundInvestmentPromises = investmentPromises.filter(word =>
+    lower.includes(word)
+  );
+
+  const foundJobScam = jobScam.filter(word =>
     lower.includes(word)
   );
 
@@ -611,10 +633,51 @@ function analyzeMessage(input) {
     );
   }
 
+  if (foundInvestmentPromises.length > 0) {
+    score += 25;
+    signals.push(
+      "The message promises unusually high, guaranteed, or risk-free financial returns."
+    );
+  }
+
+  if (
+    foundJobScam.length > 0 &&
+    (
+      foundMoney.length > 0 ||
+      lower.includes("fee") ||
+      lower.includes("pay")
+    )
+  ) {
+    score += 25;
+    signals.push(
+      "The message may be offering a job while requesting payment, fees, or promising unusually easy earnings."
+    );
+  }
+
   if (foundSecrecy.length > 0) {
     score += 15;
     signals.push(
       "The message pressures the recipient to keep the communication secret."
+    );
+  }
+
+  if (
+    foundPrizes.length > 0 &&
+    foundLinks.length > 0
+  ) {
+    score += 20;
+    signals.push(
+      "The message combines a prize or reward claim with a link."
+    );
+  }
+
+  if (
+    foundInvestmentPromises.length > 0 &&
+    foundLinks.length > 0
+  ) {
+    score += 20;
+    signals.push(
+      "The message combines an investment promise with a link."
     );
   }
   return getRisk(score, signals);
