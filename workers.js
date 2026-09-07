@@ -139,11 +139,16 @@ if (threat.found) {
   );
 const officialBrandDomains = {
   paypal: ["paypal.com"],
-  facebook: ["facebook.com"],
+  facebook: ["facebook.com", "facebook.net"],
   instagram: ["instagram.com"],
   whatsapp: ["whatsapp.com"],
   telegram: ["telegram.org"],
-  microsoft: ["microsoft.com", "live.com", "office.com", "microsoftonline.com"],
+  microsoft: [
+    "microsoft.com",
+    "live.com",
+    "office.com",
+    "microsoftonline.com"
+  ],
   google: ["google.com"],
   apple: ["apple.com", "icloud.com"],
   amazon: ["amazon.com"],
