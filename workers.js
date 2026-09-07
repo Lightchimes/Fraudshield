@@ -685,6 +685,92 @@ const secrecy = [
   }
   return getRisk(score, signals);
 }
+function analyzePhone(input) {
+  const text = input.trim();
+  const digits = text.replace(/[^\d+]/g, "");
+
+  let score = 0;
+  const signals = [];
+
+  // Basic phone-number validation
+  if (!digits || digits.replace(/\D/g, "").length < 7) {
+    return getRisk(30, [
+      "This does not appear to be a valid phone number."
+    ]);
+  }
+
+  // Nigerian international format
+  if (digits.startsWith("+234")) {
+    if (digits.length !== 14) {
+      score += 20;
+      signals.push(
+        "The Nigerian phone number appears to have an unusual length."
+      );
+    }
+  }
+
+  // Nigerian local format
+  if (digits.startsWith("0")) {
+    const localDigits = digits.replace(/\D/g, "");
+
+    if (localDigits.length !== 11) {
+      score += 20;
+      signals.push(
+        "The phone number appears to have an unusual Nigerian local format."
+      );
+    }
+  }
+
+  // International number
+  if (digits.startsWith("+") && !digits.startsWith("+234")) {
+    signals.push(
+      "This is an international phone number. Verify the caller before sharing sensitive information."
+    );
+  }
+
+  // Repeated digits
+  const numberOnly = digits.replace(/\D/g, "");
+
+  if (/(\d)\1{5,}/.test(numberOnly)) {
+    score += 15;
+    signals.push(
+      "The phone number contains an unusual sequence of repeated digits."
+    );
+  }
+
+  // Excessively short or suspicious-looking number
+  if (numberOnly.length < 10) {
+    score += 15;
+    signals.push(
+      "The phone number is unusually short."
+    );
+  }
+
+  // Premium/special service patterns
+  const suspiciousPrefixes = [
+    "0909",
+    "0919"
+  ];
+
+  if (
+    suspiciousPrefixes.some(prefix =>
+      numberOnly.startsWith(prefix)
+    )
+  ) {
+    score += 10;
+    signals.push(
+      "The number uses a prefix that may require additional verification."
+    );
+  }
+
+  if (signals.length === 0) {
+    signals.push(
+      "No obvious risk indicators were detected from the phone number itself."
+    );
+  }
+
+  return getRisk(score, signals);
+}
 export default {
   async fetch(request) {
     if (request.method === "OPTIONS") {
