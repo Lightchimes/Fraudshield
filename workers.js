@@ -964,16 +964,6 @@ function analyzePhone(input) {
     );
   }
 
-  // Sequential digits
-  if (
-    /012345|123456|234567|345678|456789/.test(numberOnly) ||
-    /987654|876543|765432|654321|543210/.test(numberOnly)
-  ) {
-    score += 10;
-    signals.push(
-      "The phone number contains an unusual sequential digit pattern."
-    );
-  }
 
   // Very short number
   if (numberOnly.length < 10) {
