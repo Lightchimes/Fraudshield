@@ -599,16 +599,17 @@ function analyzeMessage(input) {
     "pay to get the job"
   ];
 
-  const secrecy = [
+const secrecy = [
     "keep this secret",
     "keep it secret",
     "don't tell anyone",
+    "don’t tell anyone",
     "do not tell anyone",
     "keep this between us",
     "tell nobody",
-    "don't share this"
+    "don't share this",
+    "don’t share this"
   ];
-
   const foundEmergencyMoney = emergencyMoney.filter(word =>
     lower.includes(word)
   );
