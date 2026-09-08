@@ -1011,14 +1011,11 @@ try {
     "IPQS secret binding detected: YES."
   );
     const response = await fetch(
-      `https://www.ipqualityscore.com/api/json/phone?phone=${encodeURIComponent(ipqsNumber)}&country=NG`,
-      {
-        method: "GET",
-        headers: {
-          "IPQS-KEY": ipqsKey
-        }
-      }
-    );
+  `https://www.ipqualityscore.com/api/json/phone/${encodeURIComponent(ipqsKey)}/${encodeURIComponent(ipqsNumber)}?country=NG`,
+  {
+    method: "GET"
+  }
+);
 
     const data = await response.json();
 
