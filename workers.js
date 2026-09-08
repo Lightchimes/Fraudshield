@@ -998,7 +998,7 @@ const ipqsNumber =
       "No obvious risk indicators were detected from the phone number itself."
     );
   }
-    // // IPQS phone reputation check
+    // IPQS phone reputation check
 try {
   const response = await fetch(
     `https://www.ipqualityscore.com/api/json/phone?phone=${encodeURIComponent(ipqsNumber)}`,
