@@ -1003,10 +1003,13 @@ try {
   const ipqsKey = env.IPQS_API_KEY?.trim();
 
   if (!ipqsKey) {
-    signals.push(
-      "IPQS API key is not configured on the Worker."
-    );
-  } else {
+  signals.push(
+    "IPQS secret binding detected: NO."
+  );
+} else {
+  signals.push(
+    "IPQS secret binding detected: YES."
+  );
     const response = await fetch(
       `https://www.ipqualityscore.com/api/json/phone?phone=${encodeURIComponent(ipqsNumber)}&country=NG`,
       {
