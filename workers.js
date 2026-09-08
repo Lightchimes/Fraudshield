@@ -998,7 +998,7 @@ const ipqsNumber =
       "No obvious risk indicators were detected from the phone number itself."
     );
   }
-  // IPQS phone reputation check
+    // IPQS phone reputation check
   try {
     const response = await fetch(
       `https://www.ipqualityscore.com/api/json/phone/${env.IPQS_API_KEY}/${encodeURIComponent(ipqsNumber)}`
@@ -1040,14 +1040,14 @@ const ipqsNumber =
             "IPQS indicates that this number may not currently be active."
           );
         }
-      
-    } else {
-  signals.push(
-    `IPQS could not complete the reputation check: ${
-      data.message || "Unknown IPQS error"
-    }`
-  );
-}
+      } else {
+        signals.push(
+          `IPQS could not complete the reputation check: ${
+            data.message || "Unknown IPQS error"
+          }`
+        );
+      }
+    }
   } catch (error) {
     signals.push(
       "IPQS phone reputation check could not be completed."
