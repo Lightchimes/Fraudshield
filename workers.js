@@ -1005,7 +1005,7 @@ try {
     {
       method: "GET",
       headers: {
-        "IPQS-KEY": env.IPQS_API_KEY
+        "IPQS-KEY": env.IPQS_API_KEY.trim()
       }
     }
   );
