@@ -1000,64 +1000,111 @@ const ipqsNumber =
   }
     // IPQS phone reputation check
 try {
-  const response = await fetch(
-  `https://www.ipqualityscore.com/api/json/phone?phone=${encodeURIComponent(ipqsNumber)}`,
-    {
-      method: "GET",
-      headers: {
-        "IPQS-KEY": env.IPQS_API_KEY.trim()
-      }
-    }
-  );
+  const ipqsKey = env.IPQS_API_KEY?.trim();
 
-  if (response.ok) {
+  if (!ipqsKey) {
+    signals.push(
+      "IPQS API key is not configured on the Worker."
+    );
+  } else {
+    const response = await fetch(
+      `https://www.ipqualityscore.com/api/json/phone?phone=${encodeURIComponent(ipqsNumber)}&country=NG`,
+      {
+        method: "GET",
+        headers: {
+          "IPQS-KEY": ipqsKey
+        }
+      }
+    );
+
     const data = await response.json();
 
-    if (data.success) {
+    if (response.ok && data.success) {
+
+      // IPQS fraud score
       if (data.fraud_score !== undefined) {
-        score += Math.round(Number(data.fraud_score) * 0.6);
+        const fraudScore = Number(data.fraud_score);
+
+        score += Math.round(fraudScore * 0.6);
+
         signals.push(
-          `IPQS phone reputation score: ${data.fraud_score}/100.`
+          `IPQS phone reputation score: ${fraudScore}/100.`
         );
       }
 
+      // Recent abuse
+      if (data.recent_abuse === true) {
+        score += 20;
+
+        signals.push(
+          "IPQS reports recent abuse associated with this number."
+        );
+      }
+
+      // Spammer
       if (data.spammer === true) {
         score += 25;
+
         signals.push(
           "IPQS identifies this number as associated with spam activity."
         );
       }
 
+      // Risky
       if (data.risky === true) {
         score += 20;
+
         signals.push(
           "IPQS identifies this number as potentially risky."
         );
       }
 
-      if (data.voip === true) {
+      // VOIP
+      if (data.VOIP === true || data.voip === true) {
         signals.push(
           "IPQS identifies this number as a VoIP number."
         );
       }
 
-      if (data.active_status === false) {
+      // Prepaid
+      if (data.prepaid === true) {
+        signals.push(
+          "IPQS identifies this number as prepaid."
+        );
+      }
+
+      // Active status
+      if (
+        data.active === false ||
+        data.active_status === false ||
+        (
+          typeof data.active_status === "string" &&
+          data.active_status.toLowerCase().includes("disconnected")
+        )
+      ) {
         signals.push(
           "IPQS indicates that this number may not currently be active."
         );
       }
+
+      // Validity
+      if (data.valid === false) {
+        score += 20;
+
+        signals.push(
+          "IPQS indicates that this phone number is not valid."
+        );
+      }
+
     } else {
       signals.push(
         `IPQS could not complete the reputation check: ${
-          data.message || "Unknown IPQS error"
+          data.message || `HTTP ${response.status}`
         }`
       );
     }
-  } else {
-    signals.push(
-      `IPQS phone reputation service returned HTTP ${response.status}.`
-    );
   }
+
 } catch (error) {
   signals.push(
     "IPQS phone reputation check could not be completed."
