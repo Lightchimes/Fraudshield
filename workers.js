@@ -1040,16 +1040,14 @@ const ipqsNumber =
             "IPQS indicates that this number may not currently be active."
           );
         }
-      } else {
-        signals.push(
-          "IPQS could not complete a reputation check for this number."
-        );
-      }
+      
     } else {
-      signals.push(
-        "IPQS phone reputation service was unavailable."
-      );
-    }
+  signals.push(
+    `IPQS could not complete the reputation check: ${
+      data.message || "Unknown IPQS error"
+    }`
+  );
+}
   } catch (error) {
     signals.push(
       "IPQS phone reputation check could not be completed."
