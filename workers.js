@@ -998,68 +998,71 @@ const ipqsNumber =
       "No obvious risk indicators were detected from the phone number itself."
     );
   }
-    // IPQS phone reputation check
-  try {
-    const response = await fetch(
-  `https://www.ipqualityscore.com/api/json/phone?phone=${encodeURIComponent(ipqsNumber)}`,
-  {
-    method: "GET",
-    headers: {
-      "IPQS-KEY": env.IPQS_API_KEY
-    }
-  }
-);
-
-    if (response.ok) {
-      const data = await response.json();
-
-      if (data.success) {
-        if (data.fraud_score !== undefined) {
-          score += Math.round(Number(data.fraud_score) * 0.6);
-          signals.push(
-            `IPQS phone reputation score: ${data.fraud_score}/100.`
-          );
-        }
-
-        if (data.spammer === true) {
-          score += 25;
-          signals.push(
-            "IPQS identifies this number as associated with spam activity."
-          );
-        }
-
-        if (data.risky === true) {
-          score += 20;
-          signals.push(
-            "IPQS identifies this number as potentially risky."
-          );
-        }
-
-        if (data.voip === true) {
-          signals.push(
-            "IPQS identifies this number as a VoIP number."
-          );
-        }
-
-        if (data.active_status === false) {
-          signals.push(
-            "IPQS indicates that this number may not currently be active."
-          );
-        }
-      } else {
-        signals.push(
-          `IPQS could not complete the reputation check: ${
-            data.message || "Unknown IPQS error"
-          }`
-        );
+    // // IPQS phone reputation check
+try {
+  const response = await fetch(
+    `https://www.ipqualityscore.com/api/json/phone?phone=${encodeURIComponent(ipqsNumber)}`,
+    {
+      method: "GET",
+      headers: {
+        "IPQS-KEY": env.IPQS_API_KEY
       }
     }
-  } catch (error) {
+  );
+
+  if (response.ok) {
+    const data = await response.json();
+
+    if (data.success) {
+      if (data.fraud_score !== undefined) {
+        score += Math.round(Number(data.fraud_score) * 0.6);
+        signals.push(
+          `IPQS phone reputation score: ${data.fraud_score}/100.`
+        );
+      }
+
+      if (data.spammer === true) {
+        score += 25;
+        signals.push(
+          "IPQS identifies this number as associated with spam activity."
+        );
+      }
+
+      if (data.risky === true) {
+        score += 20;
+        signals.push(
+          "IPQS identifies this number as potentially risky."
+        );
+      }
+
+      if (data.voip === true) {
+        signals.push(
+          "IPQS identifies this number as a VoIP number."
+        );
+      }
+
+      if (data.active_status === false) {
+        signals.push(
+          "IPQS indicates that this number may not currently be active."
+        );
+      }
+    } else {
+      signals.push(
+        `IPQS could not complete the reputation check: ${
+          data.message || "Unknown IPQS error"
+        }`
+      );
+    }
+  } else {
     signals.push(
-      "IPQS phone reputation check could not be completed."
+      `IPQS phone reputation service returned HTTP ${response.status}.`
     );
   }
-
+} catch (error) {
+  signals.push(
+    "IPQS phone reputation check could not be completed."
+  );
+}
   return getRisk(score, signals);
 }
 export default {
