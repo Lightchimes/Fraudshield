@@ -649,187 +649,187 @@ async function analyzePhone(input, env) {
 
   const ipqsKey = env?.IPQS_API_KEY?.trim();
 
-  if (!ipqsKey) {
-    signals.push(
-      "IPQS secret binding detected: NO. The IPQS_API_KEY runtime secret is missing."
-    );
-  } else {
-    signals.push(
-      "IPQS secret binding detected: YES."
-    );
+if (!ipqsKey) {
+  signals.push(
+    "IPQS secret binding detected: NO. The IPQS_API_KEY runtime secret is missing."
+  );
+} else {
+  signals.push(
+    "IPQS secret binding detected: YES."
+  );
 
-    const digits = numberOnly;
+  const digits = numberOnly;
 
-    const ipqsNumber =
-      digits.startsWith("0") && digits.length === 11
-        ? "+234" + digits.slice(1)
-        : digits;
+  const ipqsNumber =
+    digits.startsWith("0") && digits.length === 11
+      ? "+234" + digits.slice(1)
+      : digits;
+
+  try {
+    const ipqsUrl =
+      "https://www.ipqualityscore.com/api/json/phone" +
+      "?phone=" +
+      encodeURIComponent(ipqsNumber) +
+      "&country=NG";
+
+    const ipqsResponse = await fetch(ipqsUrl, {
+      method: "GET",
+      headers: {
+        "IPQS-KEY": ipqsKey,
+        "Accept": "application/json",
+      },
+    });
+
+    const ipqsText = await ipqsResponse.text();
+
+    let data = null;
 
     try {
-      const ipqsUrl =
-        "https://www.ipqualityscore.com/api/json/phone" +
-        "?phone=" +
-        encodeURIComponent(ipqsNumber) +
-        "&country=NG";
+      data = JSON.parse(ipqsText);
+    } catch {
+      data = null;
+    }
 
-      const ipqsResponse = await fetch(ipqsUrl, {
-        method: "GET",
-        headers: {
-          "IPQS-KEY": ipqsKey,
-          "Accept": "application/json",
-        },
-      });
+    if (!ipqsResponse.ok) {
+      signals.push(
+        "IPQS HTTP error: " +
+          ipqsResponse.status +
+          "."
+      );
 
-      const ipqsText = await ipqsResponse.text();
-
-      let data = null;
-
-      try {
-        data = JSON.parse(ipqsText);
-      } catch {
-        data = null;
+      if (ipqsText) {
+        signals.push(
+          "IPQS response: " +
+            ipqsText.slice(0, 250)
+        );
       }
+    } else if (!data) {
+      signals.push(
+        "IPQS returned a response that was not valid JSON."
+      );
+    } else if (data.success === false) {
+      signals.push(
+        "IPQS rejected the reputation request: " +
+          (data.message || "Unknown IPQS error.")
+      );
+    } else {
+      const fraudScore =
+        Number(data.fraud_score) || 0;
 
-      if (!ipqsResponse.ok) {
+      if (fraudScore >= 90) {
+        score += 60;
         signals.push(
-          "IPQS HTTP error: " +
-            ipqsResponse.status +
-            "."
+          "IPQS reports a very high phone fraud score: " +
+            fraudScore +
+            "/100."
         );
-
-        if (ipqsText) {
-          signals.push(
-            "IPQS response: " +
-              ipqsText.slice(0, 250)
-          );
-        }
-      } else if (!data) {
+      } else if (fraudScore >= 85) {
+        score += 50;
         signals.push(
-          "IPQS returned a response that was not valid JSON."
+          "IPQS reports a high phone fraud score: " +
+            fraudScore +
+            "/100."
         );
-      } else if (data.success === false) {
+      } else if (fraudScore >= 75) {
+        score += 35;
         signals.push(
-          "IPQS rejected the reputation request: " +
-            (data.message || "Unknown IPQS error.")
+          "IPQS reports a suspicious phone fraud score: " +
+            fraudScore +
+            "/100."
+        );
+      } else if (fraudScore > 0) {
+        score += Math.round(fraudScore * 0.6);
+        signals.push(
+          "IPQS phone fraud score: " +
+            fraudScore +
+            "/100."
         );
       } else {
-        const fraudScore =
-          Number(data.fraud_score) || 0;
-
-        if (fraudScore >= 90) {
-          score += 60;
-          signals.push(
-            "IPQS reports a very high phone fraud score: " +
-              fraudScore +
-              "/100."
-          );
-        } else if (fraudScore >= 85) {
-          score += 50;
-          signals.push(
-            "IPQS reports a high phone fraud score: " +
-              fraudScore +
-              "/100."
-          );
-        } else if (fraudScore >= 75) {
-          score += 35;
-          signals.push(
-            "IPQS reports a suspicious phone fraud score: " +
-              fraudScore +
-              "/100."
-          );
-        } else if (fraudScore > 0) {
-          score += Math.round(fraudScore * 0.6);
-          signals.push(
-            "IPQS phone fraud score: " +
-              fraudScore +
-              "/100."
-          );
-        } else {
-          signals.push(
-            "IPQS returned a low or zero fraud score."
-          );
-        }
-
-        if (data.recent_abuse === true) {
-          score += 25;
-          signals.push(
-            "IPQS reports recent abuse associated with this number."
-          );
-        }
-
-        if (data.risky === true) {
-          score += 20;
-          signals.push(
-            "IPQS flags this phone number as risky."
-          );
-        }
-
-        if (data.spammer === true) {
-          score += 25;
-          signals.push(
-            "IPQS identifies this number as associated with spam activity."
-          );
-        }
-
-        if (data.active === false) {
-          score += 10;
-          signals.push(
-            "IPQS reports that the phone line is not currently active."
-          );
-        }
-
-        if (data.valid === false) {
-          score += 20;
-          signals.push(
-            "IPQS reports that the phone number is invalid."
-          );
-        }
-
-        if (data.VOIP === true) {
-          signals.push(
-            "IPQS identifies the number as a VOIP number."
-          );
-        }
-
-        if (data.prepaid === true) {
-          signals.push(
-            "IPQS identifies the number as prepaid."
-          );
-        }
-
-        if (data.country) {
-          signals.push(
-            "IPQS country: " + data.country + "."
-          );
-        }
-
-        if (data.carrier) {
-          signals.push(
-            "IPQS carrier: " + data.carrier + "."
-          );
-        }
-
-        if (data.line_type) {
-          signals.push(
-            "IPQS line type: " + data.line_type + "."
-          );
-        }
-
-        if (data.request_id) {
-          signals.push(
-            "IPQS request ID: " +
-              data.request_id +
-              "."
-          );
-        }
+        signals.push(
+          "IPQS returned a low or zero fraud score."
+        );
       }
-    } catch (error) {
-      signals.push(
-        "IPQS connection error: " +
-          error.message
-      );
+
+      if (data.recent_abuse === true) {
+        score += 25;
+        signals.push(
+          "IPQS reports recent abuse associated with this number."
+        );
+      }
+
+      if (data.risky === true) {
+        score += 20;
+        signals.push(
+          "IPQS flags this phone number as risky."
+        );
+      }
+
+      if (data.spammer === true) {
+        score += 25;
+        signals.push(
+          "IPQS identifies this number as associated with spam activity."
+        );
+      }
+
+      if (data.active === false) {
+        score += 10;
+        signals.push(
+          "IPQS reports that the phone line is not currently active."
+        );
+      }
+
+      if (data.valid === false) {
+        score += 20;
+        signals.push(
+          "IPQS reports that the phone number is invalid."
+        );
+      }
+
+      if (data.VOIP === true) {
+        signals.push(
+          "IPQS identifies the number as a VOIP number."
+        );
+      }
+
+      if (data.prepaid === true) {
+        signals.push(
+          "IPQS identifies the number as prepaid."
+        );
+      }
+
+      if (data.country) {
+        signals.push(
+          "IPQS country: " + data.country + "."
+        );
+      }
+
+      if (data.carrier) {
+        signals.push(
+          "IPQS carrier: " + data.carrier + "."
+        );
+      }
+
+      if (data.line_type) {
+        signals.push(
+          "IPQS line type: " + data.line_type + "."
+        );
+      }
+
+      if (data.request_id) {
+        signals.push(
+          "IPQS request ID: " +
+            data.request_id +
+            "."
+        );
+      }
     }
+  } catch (error) {
+    signals.push(
+      "IPQS connection error: " +
+        error.message
+    );
   }
+}
 
   const risk = getRisk(score);
 
