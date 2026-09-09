@@ -417,7 +417,7 @@ async function analyzeMessage(input) {
     "deposit",
     "cash",
     "funds",
-    "₦",
+    "â‚¦",
     "naira"
   ];
 
@@ -469,12 +469,12 @@ async function analyzeMessage(input) {
     "keep this secret",
     "keep it secret",
     "don't tell anyone",
-    "don’t tell anyone",
+    "donâ€™t tell anyone",
     "do not tell anyone",
     "keep this between us",
     "tell nobody",
     "don't share this",
-    "don’t share this"
+    "donâ€™t share this"
   ];
 
   const hasUrgency =
@@ -773,17 +773,17 @@ async function analyzePhone(input, env) {
 
     try {
       const ipqsUrl =
-        "https://www.ipqualityscore.com/api/json/phone" +
-        "?phone=" +
+        "https://www.ipqualityscore.com/api/json/phone/" +
+        encodeURIComponent(ipqsKey) +
+        "/" +
         encodeURIComponent(ipqsNumber) +
-        "&country=NG";
+        "?country=NG";
 
       const ipqsResponse = await fetch(
         ipqsUrl,
         {
           method: "GET",
           headers: {
-            "IPQS-KEY": ipqsKey,
             "Accept": "application/json"
           }
         }
@@ -1056,7 +1056,7 @@ export default {
       return response({
         service: "FraudShield API",
         status: "online",
-        version: "3.1"
+        version: "3.2"
       });
     }
 
