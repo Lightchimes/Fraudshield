@@ -773,21 +773,22 @@ async function analyzePhone(input, env) {
 
     try {
       const ipqsUrl =
-        "https://www.ipqualityscore.com/api/json/phone/" +
-        encodeURIComponent(ipqsKey) +
-        "/" +
-        encodeURIComponent(ipqsNumber) +
-        "?country=NG";
+  "https://www.ipqualityscore.com/api/json/phone" +
+  "?key=" +
+  encodeURIComponent(ipqsKey) +
+  "&phone=" +
+  encodeURIComponent(ipqsNumber) +
+  "&country=NG";
 
-      const ipqsResponse = await fetch(
-        ipqsUrl,
-        {
-          method: "GET",
-          headers: {
-            "Accept": "application/json"
-          }
-        }
-      );
+const ipqsResponse = await fetch(
+  ipqsUrl,
+  {
+    method: "GET",
+    headers: {
+      "Accept": "application/json"
+    }
+  }
+);
 
       const raw =
         await ipqsResponse.text();
