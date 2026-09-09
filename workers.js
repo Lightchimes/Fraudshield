@@ -1,105 +1,95 @@
-const corsHeaders = {
+const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type",
+  "Access-Control-Allow-Headers": "Content-Type"
 };
 
 function response(data, status = 200) {
-  return new Response(JSON.stringify(data, null, 2), {
+  return new Response(JSON.stringify(data), {
     status,
     headers: {
-      ...corsHeaders,
-      "Content-Type": "application/json",
-    },
+      ...CORS_HEADERS,
+      "Content-Type": "application/json"
+    }
   });
 }
 
 function getRisk(score) {
   const finalScore = Math.max(0, Math.min(100, Math.round(score)));
 
-  if (finalScore >= 70) {
-    return {
-      score: finalScore,
-      level: "HIGH RISK",
-    };
-  }
+  let level = "LOWER RISK";
 
-  if (finalScore >= 40) {
-    return {
-      score: finalScore,
-      level: "MEDIUM RISK",
-    };
+  if (finalScore >= 70) {
+    level = "HIGH RISK";
+  } else if (finalScore >= 40) {
+    level = "MEDIUM RISK";
   }
 
   return {
     score: finalScore,
-    level: "LOWER RISK",
+    level
   };
 }
 
-/* ---------------- PHISHTANK ---------------- */
-
 async function checkPhishTank(url) {
   try {
-    const body = new URLSearchParams();
-    body.set("url", url);
-    body.set("format", "json");
+    const form = new URLSearchParams();
+    form.set("url", url);
+    form.set("format", "json");
 
     const result = await fetch(
       "http://checkurl.phishtank.com/checkurl/",
       {
         method: "POST",
         headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-          "User-Agent": "FraudShield/2.0",
+          "User-Agent": "FraudShield/3.0",
+          "Content-Type": "application/x-www-form-urlencoded"
         },
-        body: body.toString(),
+        body: form.toString()
       }
     );
 
-    const text = await result.text();
+    const raw = await result.text();
 
     if (!result.ok) {
       return {
         found: false,
         available: false,
         status: result.status,
-        diagnostic: text.slice(0, 300),
+        diagnostic: raw.slice(0, 300)
       };
     }
 
     let data;
 
     try {
-      data = JSON.parse(text);
+      data = JSON.parse(raw);
     } catch {
       return {
         found: false,
         available: false,
         status: result.status,
-        diagnostic: text.slice(0, 300),
+        diagnostic: raw.slice(0, 300)
       };
     }
 
-    const phishingResult = data?.results;
+    const item = data && data.results ? data.results : {};
 
     return {
       found:
-        phishingResult?.in_database === true &&
-        phishingResult?.valid === true,
+        item.in_database === true &&
+        item.valid === true,
       available: true,
-      status: result.status,
+      status: result.status
     };
   } catch (error) {
     return {
       found: false,
       available: false,
-      error: error.message,
+      error: String(error)
     };
   }
 }
-
-/* ---------------- WEBSITE ---------------- */
 
 async function analyzeWebsite(input) {
   let url;
@@ -108,9 +98,13 @@ async function analyzeWebsite(input) {
     url = new URL(input.trim());
   } catch {
     return {
+      type: "website",
       ...getRisk(25),
-      signals: ["The submitted website address is not a valid URL."],
-      advice: "Check the address carefully before visiting it.",
+      signals: [
+        "The supplied website address is not a valid URL."
+      ],
+      advice:
+        "Check the website address carefully before visiting it."
     };
   }
 
@@ -118,19 +112,21 @@ async function analyzeWebsite(input) {
   const signals = [];
 
   const hostname = url.hostname.toLowerCase();
+  const fullUrl = url.href.toLowerCase();
 
   const knownMaliciousDomains = [
-    "qujqmtk.com",
+    "qujqmtk.com"
   ];
 
   const knownMalicious = knownMaliciousDomains.some(
-    (domain) =>
+    domain =>
       hostname === domain ||
       hostname.endsWith("." + domain)
   );
 
   if (knownMalicious) {
     score += 80;
+
     signals.push(
       "This domain is on FraudShield's known malicious-domain list."
     );
@@ -146,12 +142,12 @@ async function analyzeWebsite(input) {
       "microsoft.com",
       "live.com",
       "office.com",
-      "microsoftonline.com",
+      "microsoftonline.com"
     ],
     google: ["google.com"],
     apple: ["apple.com", "icloud.com"],
     amazon: ["amazon.com"],
-    binance: ["binance.com"],
+    binance: ["binance.com"]
   };
 
   const hostnameLabels = hostname.split(".");
@@ -159,12 +155,12 @@ async function analyzeWebsite(input) {
   const suspiciousBrandMatch = Object.entries(
     officialBrandDomains
   ).some(([brand, officialDomains]) => {
-    const brandInHostname = hostnameLabels.some((label) =>
-      label.includes(brand)
+    const brandInHostname = hostnameLabels.some(
+      label => label.includes(brand)
     );
 
     const isOfficial = officialDomains.some(
-      (domain) =>
+      domain =>
         hostname === domain ||
         hostname.endsWith("." + domain)
     );
@@ -174,6 +170,7 @@ async function analyzeWebsite(input) {
 
   if (suspiciousBrandMatch) {
     score += 25;
+
     signals.push(
       "The hostname contains a major brand name but is not on FraudShield's official-domain allowlist."
     );
@@ -181,7 +178,10 @@ async function analyzeWebsite(input) {
 
   if (url.protocol !== "https:") {
     score += 20;
-    signals.push("The website does not use HTTPS.");
+
+    signals.push(
+      "The website does not use HTTPS."
+    );
   }
 
   const ipAddressPattern =
@@ -189,6 +189,7 @@ async function analyzeWebsite(input) {
 
   if (ipAddressPattern.test(hostname)) {
     score += 30;
+
     signals.push(
       "The website uses an IP address instead of a normal domain name."
     );
@@ -196,27 +197,36 @@ async function analyzeWebsite(input) {
 
   if (hostname.includes("xn--")) {
     score += 25;
+
     signals.push(
-      "The hostname contains punycode, which can sometimes be used for lookalike domains."
+      "The domain uses punycode, which can sometimes be used in deceptive lookalike domains."
     );
   }
 
-  if ((hostname.match(/-/g) || []).length >= 3) {
+  const hyphenCount =
+    (hostname.match(/-/g) || []).length;
+
+  if (hyphenCount >= 3) {
     score += 10;
+
     signals.push(
-      "The hostname contains an unusually high number of hyphens."
+      "The domain contains an unusually high number of hyphens."
     );
   }
 
   if (hostname.length > 50) {
     score += 10;
-    signals.push("The hostname is unusually long.");
+
+    signals.push(
+      "The hostname is unusually long."
+    );
   }
 
-  if (input.includes("@")) {
+  if (fullUrl.includes("@")) {
     score += 25;
+
     signals.push(
-      "The URL contains an @ symbol, which can be used to disguise the real destination."
+      "The URL contains an @ symbol, which can be used to disguise the actual destination."
     );
   }
 
@@ -225,62 +235,72 @@ async function analyzeWebsite(input) {
     "verify",
     "verification",
     "secure",
-    "security",
     "account",
     "update",
     "confirm",
     "password",
     "wallet",
-    "payment",
-    "signin",
-    "unlock",
+    "bonus",
+    "reward",
+    "claim",
+    "free",
+    "urgent"
   ];
 
-  const suspiciousWordCount = suspiciousWords.filter(
-    (word) => input.toLowerCase().includes(word)
-  ).length;
+  const matchedWords = suspiciousWords.filter(
+    word => fullUrl.includes(word)
+  );
 
-  if (suspiciousWordCount >= 2) {
+  if (matchedWords.length >= 2) {
     score += 20;
+
     signals.push(
-      "The URL contains several words commonly associated with phishing pages."
+      "The URL contains multiple words commonly associated with deceptive or phishing pages."
     );
   }
 
-  const sensitiveTargets = [
+  const sensitiveWords = [
+    "login",
     "password",
-    "bank",
     "wallet",
-    "payment",
     "account",
-    "crypto",
+    "bank"
   ];
 
-  const hasSensitiveTarget = sensitiveTargets.some((word) =>
-    input.toLowerCase().includes(word)
-  );
-
-  if (hasSensitiveTarget && suspiciousWordCount >= 1) {
+  if (
+    sensitiveWords.some(
+      word => fullUrl.includes(word)
+    ) &&
+    matchedWords.length >= 1
+  ) {
     score += 15;
+
     signals.push(
       "The URL appears to target sensitive account or financial information."
     );
   }
 
-  if (hostname.split(".").length >= 4) {
+  const hostnameParts = hostname.split(".");
+
+  if (hostnameParts.length >= 4) {
     score += 10;
+
     signals.push(
-      "The hostname contains an unusually deep subdomain structure."
+      "The hostname contains many subdomain levels."
     );
   }
 
-  if (input.length > 120) {
+  if (fullUrl.length > 120) {
     score += 10;
-    signals.push("The URL is unusually long.");
+
+    signals.push(
+      "The URL is unusually long."
+    );
   }
 
-  if (/%[0-9a-fA-F]{2}/.test(input)) {
+  if (/%[0-9a-f]{2}/i.test(fullUrl)) {
     score += 5;
+
     signals.push(
       "The URL contains percent-encoded characters."
     );
@@ -291,71 +311,81 @@ async function analyzeWebsite(input) {
     "tinyurl.com",
     "t.co",
     "goo.gl",
-    "is.gd",
     "ow.ly",
+    "is.gd",
+    "buff.ly"
   ];
 
-  if (shorteners.some((domain) => hostname === domain)) {
+  if (
+    shorteners.some(
+      domain => hostname === domain
+    )
+  ) {
     score += 15;
+
     signals.push(
-      "The URL uses a link-shortening service, which hides the final destination."
+      "The URL uses a link-shortening service."
     );
   }
 
   const suspiciousDomainPatterns = [
-    /^login-/,
-    /^verify-/,
-    /^secure-/,
-    /^account-/,
-    /^update-/,
-    /^confirm-/,
-    /-login$/,
-    /-verify$/,
-    /-secure$/,
-    /-account$/,
+    "login-",
+    "verify-",
+    "secure-",
+    "account-",
+    "update-",
+    "confirm-",
+    "-login",
+    "-verify",
+    "-secure",
+    "-account",
+    "-update",
+    "-confirm"
   ];
 
   if (
-    suspiciousDomainPatterns.some((pattern) =>
-      pattern.test(hostname)
+    suspiciousDomainPatterns.some(
+      pattern => hostname.includes(pattern)
     )
   ) {
     score += 20;
+
     signals.push(
-      "The domain follows a suspicious login, verification, security, or account pattern."
+      "The domain uses a suspicious login, verification, security, or account pattern."
     );
   }
 
-  const phishTank = await checkPhishTank(url.href);
+  const phishTank =
+    await checkPhishTank(url.href);
+
+  if (phishTank.available === false) {
+    signals.push(
+      "External phishing intelligence was unavailable. This result is based on FraudShield's own analysis."
+    );
+  }
 
   if (phishTank.found) {
     score += 50;
+
     signals.push(
-      "PhishTank identifies this URL as a confirmed phishing URL."
-    );
-  } else if (!phishTank.available) {
-    signals.push(
-      "External phishing intelligence was unavailable. This result is based on FraudShield's own analysis."
+      "External phishing intelligence identified this URL as a phishing site."
     );
   }
 
   const risk = getRisk(score);
 
   return {
-    ...risk,
     type: "website",
-    input: input.trim(),
+    ...risk,
     signals,
     advice:
       risk.score >= 70
-        ? "Do not enter passwords, banking details, OTPs, or payment information on this website."
+        ? "Do not enter passwords, banking information, recovery codes, or payment details on this website."
         : risk.score >= 40
-        ? "Proceed carefully and verify the website through an official source."
-        : "No major warning signs were detected by the current FraudShield checks.",
+        ? "Proceed carefully and verify the website through an official source before entering sensitive information."
+        : "No major warning signs were detected by the current FraudShield checks, but always verify important websites independently."
   };
 }
-
-/* ---------------- MESSAGE ---------------- */
 
 async function analyzeMessage(input) {
   const text = input.trim().toLowerCase();
@@ -368,9 +398,9 @@ async function analyzeMessage(input) {
     "immediately",
     "right now",
     "act now",
-    "asap",
-    "within 24 hours",
-    "last chance",
+    "as soon as possible",
+    "hurry",
+    "quickly"
   ];
 
   const money = [
@@ -388,35 +418,28 @@ async function analyzeMessage(input) {
     "cash",
     "funds",
     "₦",
-    "naira",
+    "naira"
   ];
 
   const credentials = [
     "password",
+    "passcode",
     "otp",
     "one time password",
     "verification code",
     "pin",
     "cvv",
-    "card number",
-    "login",
-    "username",
+    "login"
   ];
 
   const prizes = [
-    "you have won",
+    "you won",
     "winner",
     "congratulations",
     "prize",
     "lottery",
-    "reward",
-    "claim your",
-  ];
-
-  const links = [
-    "http://",
-    "https://",
-    "www.",
+    "free gift",
+    "claim your"
   ];
 
   const threats = [
@@ -425,19 +448,21 @@ async function analyzeMessage(input) {
     "police",
     "arrest",
     "legal action",
-    "blocked",
-    "deactivated",
+    "your account will be blocked"
   ];
 
   const impersonation = [
-    "this is your boss",
-    "this is me",
     "i am your boss",
-    "your pastor",
-    "your manager",
-    "customer service",
-    "support team",
-    "bank representative",
+    "i'm your boss",
+    "this is your boss",
+    "i am the ceo",
+    "i'm the ceo",
+    "this is the ceo",
+    "i am your pastor",
+    "i'm your pastor",
+    "this is your pastor",
+    "customer support",
+    "support team"
   ];
 
   const secrecy = [
@@ -449,449 +474,619 @@ async function analyzeMessage(input) {
     "keep this between us",
     "tell nobody",
     "don't share this",
-    "don’t share this",
+    "don’t share this"
   ];
 
-  const contains = (list) =>
-    list.some((word) => text.includes(word));
+  const hasUrgency =
+    urgency.some(word => text.includes(word));
 
-  if (contains(urgency)) {
-    score += 20;
-    signals.push("The message uses urgency or pressure.");
-  }
+  const hasMoney =
+    money.some(word => text.includes(word));
 
-  if (contains(money)) {
+  const hasCredentials =
+    credentials.some(word => text.includes(word));
+
+  const hasPrize =
+    prizes.some(word => text.includes(word));
+
+  const hasLink =
+    /https?:\/\/|www\./i.test(text);
+
+  const hasThreat =
+    threats.some(word => text.includes(word));
+
+  const hasImpersonation =
+    impersonation.some(word =>
+      text.includes(word)
+    );
+
+  const hasSecrecy =
+    secrecy.some(word => text.includes(word));
+
+  if (hasUrgency) {
     score += 20;
+
     signals.push(
-      "The message involves money, payments, banking, or financial assets."
+      "The message uses urgency or pressure."
     );
   }
 
-  if (contains(credentials)) {
+  if (hasMoney) {
+    score += 20;
+
+    signals.push(
+      "The message involves money, payment, transfer, or financial assets."
+    );
+  }
+
+  if (hasCredentials) {
     score += 25;
+
     signals.push(
-      "The message requests or mentions sensitive credentials."
+      "The message requests or mentions sensitive credentials or verification codes."
     );
   }
 
-  if (contains(prizes)) {
+  if (hasPrize) {
     score += 15;
+
     signals.push(
-      "The message contains prize or reward language."
+      "The message contains prize, lottery, reward, or unexpected-win language."
     );
   }
 
-  if (contains(links)) {
+  if (hasLink) {
     score += 15;
+
     signals.push(
       "The message contains a web link."
     );
   }
 
-  if (contains(threats)) {
+  if (hasThreat) {
     score += 20;
+
     signals.push(
-      "The message uses threats or consequences to create pressure."
+      "The message uses threats or consequences to pressure the recipient."
     );
   }
 
-  if (contains(impersonation)) {
+  if (hasImpersonation) {
     score += 15;
+
     signals.push(
-      "The message may involve impersonation."
+      "The message may be impersonating an authority, company, support team, or known person."
     );
   }
 
-  if (contains(urgency) && contains(money)) {
+  if (hasMoney && hasCredentials) {
     score += 20;
+
+    signals.push(
+      "The message combines a financial request with sensitive account information."
+    );
+  }
+
+  if (hasUrgency && hasMoney) {
+    score += 20;
+
     signals.push(
       "Urgency is combined with a financial request."
     );
   }
 
-  if (contains(urgency) && contains(credentials)) {
+  if (hasUrgency && hasCredentials) {
     score += 20;
+
     signals.push(
-      "Urgency is combined with a request for sensitive information."
+      "Urgency is combined with a request involving credentials or codes."
     );
   }
 
-  if (contains(prizes) && contains(money)) {
+  if (hasPrize && hasMoney) {
     score += 15;
+
     signals.push(
-      "Prize language is combined with a financial request."
+      "The message combines a prize or reward with financial activity."
     );
   }
 
   if (
-    contains(["stranded", "accident", "hospital", "emergency", "stolen"]) &&
-    contains(money)
+    hasUrgency &&
+    hasMoney &&
+    /stranded|stolen|accident|hospital|emergency|sick|crisis/i.test(text)
   ) {
     score += 25;
+
     signals.push(
-      "An emergency or personal crisis is combined with a request for money."
+      "The message uses an emergency or personal crisis to request financial help."
     );
   }
 
   if (
-    contains(["guaranteed", "double your money", "guaranteed profit"]) &&
-    contains(["investment", "crypto", "bitcoin", "forex"])
+    /double your money|guaranteed profit|guaranteed return|risk free investment|100% profit/i.test(text)
   ) {
     score += 25;
+
     signals.push(
-      "The message contains potentially deceptive investment promises."
+      "The message makes an unusually strong investment or profit promise."
     );
   }
 
   if (
-    contains(["job", "employment", "work from home"]) &&
-    contains(["registration fee", "processing fee", "payment"])
+    /job|employment|vacancy|work from home/i.test(text) &&
+    hasMoney
   ) {
     score += 25;
+
     signals.push(
-      "The message may contain a job scam involving an upfront payment."
+      "The message may involve a job scam requesting money or payment."
     );
   }
 
-  if (contains(secrecy)) {
+  if (hasSecrecy) {
     score += 15;
+
     signals.push(
-      "The sender pressures the recipient to keep the matter secret."
+      "The sender pressures the recipient to keep the communication secret."
     );
   }
 
-  if (contains(prizes) && contains(links)) {
+  if (hasPrize && hasLink) {
     score += 20;
+
     signals.push(
-      "Prize language is combined with a link."
+      "A prize or reward claim is combined with a web link."
     );
   }
 
   if (
-    contains(["investment", "crypto", "bitcoin", "forex"]) &&
-    contains(links)
+    /investment|profit|return|crypto|bitcoin/i.test(text) &&
+    hasLink
   ) {
     score += 20;
+
     signals.push(
-      "An investment or cryptocurrency message contains a link."
+      "Investment or cryptocurrency language is combined with a link."
     );
   }
 
   const risk = getRisk(score);
 
   return {
-    ...risk,
     type: "message",
-    input: input.trim(),
+    ...risk,
     signals,
     advice:
       risk.score >= 70
-        ? "Do not send money, OTPs, passwords, PINs, or other sensitive information."
+        ? "Do not send money, passwords, OTPs, PINs, or other sensitive information. Verify the sender through an independent channel."
         : risk.score >= 40
-        ? "Verify the sender independently before taking action."
-        : "No major scam indicators were detected by the current checks.",
+        ? "Be cautious. Verify the sender and any request independently before taking action."
+        : "No major warning signs were detected by the current message checks."
   };
 }
 
-/* ---------------- PHONE ---------------- */
-
 async function analyzePhone(input, env) {
-  const raw = input.trim();
-  const numberOnly = raw.replace(/\D/g, "");
+  const original = String(input || "").trim();
+
+  const numberOnly =
+    original.replace(/\D/g, "");
 
   let score = 0;
   const signals = [];
 
-  const isNigerianLocal =
-    /^0\d{10}$/.test(numberOnly);
+  if (!numberOnly) {
+    return {
+      type: "phone",
+      ...getRisk(30),
+      signals: [
+        "No valid phone number was supplied."
+      ],
+      advice:
+        "Enter a complete phone number."
+    };
+  }
 
-  const isNigerianInternational =
-    /^\+?234\d{10}$/.test(
-      raw.replace(/[\s()-]/g, "")
+  let localValid = false;
+  let internationalValid = false;
+
+  if (
+    numberOnly.length === 11 &&
+    numberOnly.startsWith("0")
+  ) {
+    localValid = true;
+  }
+
+  if (
+    numberOnly.length >= 10 &&
+    numberOnly.length <= 15 &&
+    numberOnly.startsWith("234")
+  ) {
+    internationalValid = true;
+  }
+
+  if (
+    !localValid &&
+    !internationalValid
+  ) {
+    score += 30;
+
+    signals.push(
+      "The number does not match a normal Nigerian local or international format."
     );
+  }
 
-  if (isNigerianLocal) {
+  if (localValid) {
     signals.push(
       "The number matches a Nigerian local phone-number format."
     );
-  } else if (isNigerianInternational) {
+  }
+
+  if (internationalValid) {
     signals.push(
-      "The number matches the international Nigerian +234 format."
+      "The number matches an international Nigerian +234 format."
     );
-  } else if (numberOnly.length < 7) {
-    score += 30;
+  }
+
+  if (
+    localValid &&
+    (
+      numberOnly.startsWith("0909") ||
+      numberOnly.startsWith("0919")
+    )
+  ) {
+    score += 10;
+
     signals.push(
-      "The phone number appears too short or incomplete."
-    );
-  } else {
-    signals.push(
-      "The number uses an international or non-standard format."
+      "The number uses a prefix currently treated as requiring extra caution by FraudShield."
     );
   }
 
   if (/^(\d)\1+$/.test(numberOnly)) {
     score += 15;
+
     signals.push(
-      "The number contains repeated digits."
+      "The phone number contains repeated digits."
     );
   }
-
-  if (
-    isNigerianLocal &&
-    (numberOnly.startsWith("0909") ||
-      numberOnly.startsWith("0919"))
-  ) {
-    score += 10;
-    signals.push(
-      "The Nigerian number uses a prefix flagged by FraudShield for additional caution."
-    );
-  }
-
-  const ipqsKey = env?.IPQS_API_KEY?.trim();
-
-if (!ipqsKey) {
-  signals.push(
-    "IPQS secret binding detected: NO. The IPQS_API_KEY runtime secret is missing."
-  );
-} else {
-  signals.push(
-    "IPQS secret binding detected: YES."
-  );
-
-  const digits = numberOnly;
 
   const ipqsNumber =
-    digits.startsWith("0") && digits.length === 11
-      ? "+234" + digits.slice(1)
-      : digits;
+    localValid
+      ? "+234" + numberOnly.slice(1)
+      : internationalValid
+      ? "+" + numberOnly
+      : original;
 
-  try {
-    const ipqsUrl =
-      "https://www.ipqualityscore.com/api/json/phone" +
-      "?phone=" +
-      encodeURIComponent(ipqsNumber) +
-      "&country=NG";
+  const ipqsKey =
+    env && env.IPQS_API_KEY
+      ? String(env.IPQS_API_KEY).trim()
+      : "";
 
-    const ipqsResponse = await fetch(ipqsUrl, {
-      method: "GET",
-      headers: {
-        "IPQS-KEY": ipqsKey,
-        "Accept": "application/json",
-      },
-    });
-
-    const ipqsText = await ipqsResponse.text();
-
-    let data = null;
+  if (!ipqsKey) {
+    signals.push(
+      "IPQS secret binding detected: NO."
+    );
+  } else {
+    signals.push(
+      "IPQS secret binding detected: YES."
+    );
 
     try {
-      data = JSON.parse(ipqsText);
-    } catch {
-      data = null;
-    }
+      const ipqsUrl =
+        "https://www.ipqualityscore.com/api/json/phone" +
+        "?phone=" +
+        encodeURIComponent(ipqsNumber) +
+        "&country=NG";
 
-    if (!ipqsResponse.ok) {
-      signals.push(
-        "IPQS HTTP error: " +
-          ipqsResponse.status +
-          "."
+      const ipqsResponse = await fetch(
+        ipqsUrl,
+        {
+          method: "GET",
+          headers: {
+            "IPQS-KEY": ipqsKey,
+            "Accept": "application/json"
+          }
+        }
       );
 
-      if (ipqsText) {
-        signals.push(
-          "IPQS response: " +
-            ipqsText.slice(0, 250)
-        );
+      const raw =
+        await ipqsResponse.text();
+
+      let data = null;
+
+      try {
+        data = JSON.parse(raw);
+      } catch {
+        data = null;
       }
-    } else if (!data) {
-      signals.push(
-        "IPQS returned a response that was not valid JSON."
-      );
-    } else if (data.success === false) {
-      signals.push(
-        "IPQS rejected the reputation request: " +
-          (data.message || "Unknown IPQS error.")
-      );
-    } else {
-      const fraudScore =
-        Number(data.fraud_score) || 0;
 
-      if (fraudScore >= 90) {
-        score += 60;
+      if (!ipqsResponse.ok) {
+        let errorMessage =
+          "IPQS HTTP status: " +
+          ipqsResponse.status +
+          ".";
+
+        if (data && data.message) {
+          errorMessage +=
+            " Message: " +
+            String(data.message);
+        } else if (raw) {
+          errorMessage +=
+            " Response: " +
+            raw.slice(0, 250);
+        }
+
         signals.push(
-          "IPQS reports a very high phone fraud score: " +
-            fraudScore +
-            "/100."
+          "IPQS request failed. " +
+          errorMessage
         );
-      } else if (fraudScore >= 85) {
-        score += 50;
+      } else if (!data) {
         signals.push(
-          "IPQS reports a high phone fraud score: " +
-            fraudScore +
-            "/100."
+          "IPQS returned a successful HTTP response, but the response was not valid JSON."
         );
-      } else if (fraudScore >= 75) {
-        score += 35;
+      } else if (data.success === false) {
+        let errorMessage =
+          data.message ||
+          "Unknown IPQS API error.";
+
+        if (
+          Array.isArray(data.errors) &&
+          data.errors.length > 0
+        ) {
+          errorMessage +=
+            " Details: " +
+            data.errors.join("; ");
+        }
+
         signals.push(
-          "IPQS reports a suspicious phone fraud score: " +
-            fraudScore +
-            "/100."
-        );
-      } else if (fraudScore > 0) {
-        score += Math.round(fraudScore * 0.6);
-        signals.push(
-          "IPQS phone fraud score: " +
-            fraudScore +
-            "/100."
+          "IPQS could not complete the reputation check: " +
+          errorMessage
         );
       } else {
-        signals.push(
-          "IPQS returned a low or zero fraud score."
-        );
-      }
+        const fraudScore =
+          Number(data.fraud_score || 0);
 
-      if (data.recent_abuse === true) {
-        score += 25;
-        signals.push(
-          "IPQS reports recent abuse associated with this number."
-        );
-      }
+        if (fraudScore >= 90) {
+          score += 60;
 
-      if (data.risky === true) {
-        score += 20;
-        signals.push(
-          "IPQS flags this phone number as risky."
-        );
-      }
+          signals.push(
+            "IPQS reports a very high phone fraud score."
+          );
+        } else if (fraudScore >= 85) {
+          score += 50;
 
-      if (data.spammer === true) {
-        score += 25;
-        signals.push(
-          "IPQS identifies this number as associated with spam activity."
-        );
-      }
+          signals.push(
+            "IPQS reports a high phone fraud score."
+          );
+        } else if (fraudScore >= 75) {
+          score += 35;
 
-      if (data.active === false) {
-        score += 10;
-        signals.push(
-          "IPQS reports that the phone line is not currently active."
-        );
-      }
+          signals.push(
+            "IPQS reports an elevated phone fraud score."
+          );
+        }
 
-      if (data.valid === false) {
-        score += 20;
-        signals.push(
-          "IPQS reports that the phone number is invalid."
-        );
-      }
+        if (data.recent_abuse === true) {
+          score += 25;
 
-      if (data.VOIP === true) {
-        signals.push(
-          "IPQS identifies the number as a VOIP number."
-        );
-      }
+          signals.push(
+            "IPQS reports recent abuse associated with this number."
+          );
+        }
 
-      if (data.prepaid === true) {
-        signals.push(
-          "IPQS identifies the number as prepaid."
-        );
-      }
+        if (data.risky === true) {
+          score += 20;
 
-      if (data.country) {
-        signals.push(
-          "IPQS country: " + data.country + "."
-        );
-      }
+          signals.push(
+            "IPQS marks this phone number as risky."
+          );
+        }
 
-      if (data.carrier) {
-        signals.push(
-          "IPQS carrier: " + data.carrier + "."
-        );
-      }
+        if (data.spammer === true) {
+          score += 25;
 
-      if (data.line_type) {
-        signals.push(
-          "IPQS line type: " + data.line_type + "."
-        );
-      }
+          signals.push(
+            "IPQS identifies this number as a possible spammer."
+          );
+        }
 
-      if (data.request_id) {
-        signals.push(
-          "IPQS request ID: " +
-            data.request_id +
+        if (data.active === false) {
+          score += 15;
+
+          signals.push(
+            "IPQS reports that the phone line is not active."
+          );
+        }
+
+        if (data.valid === false) {
+          score += 20;
+
+          signals.push(
+            "IPQS reports that the phone number is not valid."
+          );
+        }
+
+        if (data.VOIP === true) {
+          signals.push(
+            "IPQS identifies this number as a VOIP number."
+          );
+        }
+
+        if (data.prepaid === true) {
+          signals.push(
+            "IPQS identifies this number as prepaid."
+          );
+        }
+
+        if (
+          data.fraud_score !== undefined
+        ) {
+          signals.push(
+            "IPQS fraud score: " +
+            fraudScore +
+            "/100."
+          );
+        }
+
+        if (data.carrier) {
+          signals.push(
+            "IPQS carrier: " +
+            String(data.carrier) +
             "."
-        );
+          );
+        }
+
+        if (data.line_type) {
+          signals.push(
+            "IPQS line type: " +
+            String(data.line_type) +
+            "."
+          );
+        }
+
+        if (data.country) {
+          signals.push(
+            "IPQS country: " +
+            String(data.country) +
+            "."
+          );
+        }
+
+        if (data.request_id) {
+          signals.push(
+            "IPQS request completed successfully."
+          );
+        }
       }
+    } catch (error) {
+      signals.push(
+        "IPQS connection error: " +
+        String(error)
+      );
     }
-  } catch (error) {
-    signals.push(
-      "IPQS connection error: " +
-        error.message
-    );
   }
-}
 
   const risk = getRisk(score);
 
   return {
-    ...risk,
     type: "phone",
-    input: raw,
+    ...risk,
     signals,
     advice:
       risk.score >= 70
-        ? "Do not send money, OTPs, passwords, or other sensitive information to this number."
+        ? "Treat this number as high risk. Do not send money, OTPs, passwords, or banking information."
         : risk.score >= 40
-        ? "Verify the caller or sender independently before taking action."
-        : "No major phone-risk indicators were detected by the current FraudShield checks.",
+        ? "Use caution and independently verify the caller before trusting requests for money or sensitive information."
+        : "No major warning signs were detected by the current phone checks."
   };
 }
 
-/* ---------------- WORKER ---------------- */
+async function analyzeAccount(input) {
+  const text =
+    String(input || "").trim();
+
+  let score = 0;
+  const signals = [];
+
+  if (!text) {
+    return {
+      type: "account",
+      ...getRisk(20),
+      signals: [
+        "No account or profile information was supplied."
+      ],
+      advice:
+        "Enter a username, profile URL, or account information to analyze."
+    };
+  }
+
+  if (
+    /verified|official|support|admin|manager|ceo|crypto|investment|giveaway|prize/i.test(text)
+  ) {
+    score += 20;
+
+    signals.push(
+      "The account information contains terms commonly seen in impersonation, investment, support, or giveaway scams."
+    );
+  }
+
+  if (
+    /telegram|whatsapp|facebook|instagram|tiktok|twitter|x\.com|youtube|linkedin/i.test(text)
+  ) {
+    signals.push(
+      "A social-media or messaging platform is referenced."
+    );
+  }
+
+  if (
+    /https?:\/\/|www\./i.test(text)
+  ) {
+    score += 10;
+
+    signals.push(
+      "The account information contains a web address."
+    );
+  }
+
+  const risk = getRisk(score);
+
+  return {
+    type: "account",
+    ...risk,
+    signals,
+    advice:
+      risk.score >= 70
+        ? "Do not trust the account without independent verification."
+        : risk.score >= 40
+        ? "Verify the account through the platform's official channels."
+        : "No major warning signs were detected by the current account checks."
+  };
+}
 
 export default {
   async fetch(request, env) {
     if (request.method === "OPTIONS") {
       return new Response(null, {
         status: 204,
-        headers: corsHeaders,
+        headers: CORS_HEADERS
       });
     }
-
-    const url = new URL(request.url);
 
     if (request.method === "GET") {
       return response({
         service: "FraudShield API",
         status: "online",
-        version: "2.0",
+        version: "3.1"
       });
     }
 
     if (request.method !== "POST") {
       return response(
         {
-          error: "Method not allowed",
+          error: "Method not allowed"
         },
         405
       );
     }
 
     try {
-      const body = await request.json();
+      const body =
+        await request.json();
 
-      const type = String(
-        body?.type || ""
-      ).toLowerCase();
+      const type =
+        String(
+          body.type || ""
+        ).toLowerCase();
 
-      const input = String(
-        body?.input || ""
-      ).trim();
+      const input =
+        String(
+          body.input || ""
+        ).trim();
 
       if (!input) {
         return response(
           {
-            error: "Input is required.",
+            error: "Input is required."
           },
           400
         );
@@ -899,20 +1094,36 @@ export default {
 
       let result;
 
-      if (type === "website" || type === "url") {
-        result = await analyzeWebsite(input);
+      if (
+        type === "website" ||
+        type === "url"
+      ) {
+        result =
+          await analyzeWebsite(input);
       } else if (
         type === "message" ||
         type === "email"
       ) {
-        result = await analyzeMessage(input);
-      } else if (type === "phone") {
-        result = await analyzePhone(input, env);
+        result =
+          await analyzeMessage(input);
+      } else if (
+        type === "phone"
+      ) {
+        result =
+          await analyzePhone(
+            input,
+            env
+          );
+      } else if (
+        type === "account"
+      ) {
+        result =
+          await analyzeAccount(input);
       } else {
         return response(
           {
             error:
-              "Unsupported type. Use website, message, email, or phone.",
+              "Unknown analysis type. Use website, message, phone, or account."
           },
           400
         );
@@ -923,10 +1134,10 @@ export default {
       return response(
         {
           error: "Server error.",
-          details: error.message,
+          message: String(error)
         },
         500
       );
     }
-  },
+  }
 };
