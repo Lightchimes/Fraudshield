@@ -1097,13 +1097,24 @@ try {
       }
 
     } else {
-      signals.push(
-        `IPQS could not complete the reputation check: ${
-          data.message || `HTTP ${response.status}`
-        }`
-      );
-    }
+  signals.push(
+    `IPQS API response: HTTP ${response.status}. ${
+      data.message || "No message returned."
+    }`
+  );
+
+  if (data.request_id) {
+    signals.push(
+      `IPQS request ID received: ${data.request_id}`
+    );
   }
+
+  if (data.errors) {
+    signals.push(
+      `IPQS errors: ${JSON.stringify(data.errors)}`
+    );
+  }
+}
 
 } catch (error) {
   signals.push(
