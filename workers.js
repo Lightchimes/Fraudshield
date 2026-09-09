@@ -757,10 +757,44 @@ async function analyzePhone(input, env) {
       ? "+" + numberOnly
       : original;
 
-  const ipqsKey =
-    env && env.IPQS_API_KEY
-      ? String(env.IPQS_API_KEY).trim()
-      : "";
+  const rawIpqsKey =
+  env && env.IPQS_API_KEY
+    ? String(env.IPQS_API_KEY)
+    : "";
+
+const ipqsKey =
+  rawIpqsKey.trim();
+
+signals.push(
+  "IPQS secret binding detected: " +
+  (ipqsKey ? "YES" : "NO") +
+  "."
+);
+
+if (ipqsKey) {
+  signals.push(
+    "IPQS secret length: " +
+    ipqsKey.length +
+    " characters."
+  );
+
+  signals.push(
+    "IPQS secret had surrounding whitespace: " +
+    (rawIpqsKey !== ipqsKey ? "YES" : "NO") +
+    "."
+  );
+
+  signals.push(
+    "IPQS secret appears to be a placeholder: " +
+    (
+      ipqsKey === "YOUR_API_KEY_HERE" ||
+      ipqsKey === "YOUR_API_KEY"
+        ? "YES"
+        : "NO"
+    ) +
+    "."
+  );
+}
 
   if (!ipqsKey) {
     signals.push(
