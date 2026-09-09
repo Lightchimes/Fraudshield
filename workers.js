@@ -797,15 +797,9 @@ if (ipqsKey) {
 }
 
   if (!ipqsKey) {
-    signals.push(
-      "IPQS secret binding detected: NO."
-    );
-  } else {
-    signals.push(
-      "IPQS secret binding detected: YES."
-    );
-
-    try {
+  // No IPQS key available.
+} else {
+  try {
       const ipqsUrl =
   "https://www.ipqualityscore.com/api/json/phone" +
   "?key=" +
