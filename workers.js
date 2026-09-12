@@ -417,7 +417,7 @@ async function analyzeMessage(input) {
     "deposit",
     "cash",
     "funds",
-    "â‚¦",
+    "₦",
     "naira"
   ];
 
