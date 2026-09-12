@@ -469,12 +469,12 @@ async function analyzeMessage(input) {
     "keep this secret",
     "keep it secret",
     "don't tell anyone",
-    "donâ€™t tell anyone",
+    "don't tell anyone",
     "do not tell anyone",
     "keep this between us",
     "tell nobody",
     "don't share this",
-    "donâ€™t share this"
+    "don't share this"
   ];
 
   const hasUrgency =
