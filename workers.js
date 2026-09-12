@@ -757,10 +757,6 @@ async function analyzePhone(input, env) {
       ? "+" + numberOnly
       : original;
 
-  const rawIpqsKey =
-  env && env.IPQS_API_KEY
-    ? String(env.IPQS_API_KEY)
-    : "";
 
 const ipqsKey =
   rawIpqsKey.trim();
