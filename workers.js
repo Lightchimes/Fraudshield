@@ -236,6 +236,7 @@ async function analyzeWebsite(input) {
     "verification",
     "secure",
     "account",
+    "security", 
     "update",
     "confirm",
     "password",
