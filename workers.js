@@ -184,6 +184,18 @@ async function analyzeWebsite(input) {
 
   const hostname = url.hostname.toLowerCase();
   const fullUrl = url.href.toLowerCase();
+  const lookalikeBrand =
+  detectLookalikeBrand(hostname);
+
+if (lookalikeBrand.detected) {
+  score += 30;
+
+  signals.push(
+    "The domain appears to imitate the " +
+    lookalikeBrand.brand +
+    " brand using a lookalike spelling."
+  );
+}
 
   const knownMaliciousDomains = [
     "qujqmtk.com"
