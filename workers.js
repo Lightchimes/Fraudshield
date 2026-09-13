@@ -90,7 +90,78 @@ async function checkPhishTank(url) {
     };
   }
 }
+function detectLookalikeBrand(hostname) {
+  const brandPatterns = {
+    paypal: [
+      "paypal.com"
+    ],
+    facebook: [
+      "facebook.com",
+      "facebook.net"
+    ],
+    instagram: [
+      "instagram.com"
+    ],
+    whatsapp: [
+      "whatsapp.com"
+    ],
+    telegram: [
+      "telegram.org"
+    ],
+    microsoft: [
+      "microsoft.com",
+      "live.com",
+      "office.com",
+      "microsoftonline.com"
+    ],
+    google: [
+      "google.com"
+    ],
+    apple: [
+      "apple.com",
+      "icloud.com"
+    ],
+    amazon: [
+      "amazon.com"
+    ],
+    binance: [
+      "binance.com"
+    ]
+  };
 
+  const normalizedHostname =
+    hostname
+      .toLowerCase()
+      .replace(/0/g, "o")
+      .replace(/1/g, "l")
+      .replace(/3/g, "e")
+      .replace(/5/g, "s")
+      .replace(/7/g, "t");
+
+  for (const [brand, officialDomains] of Object.entries(brandPatterns)) {
+    const resemblesBrand =
+      normalizedHostname.includes(brand);
+
+    const isOfficial =
+      officialDomains.some(
+        domain =>
+          hostname === domain ||
+          hostname.endsWith("." + domain)
+      );
+
+    if (resemblesBrand && !isOfficial) {
+      return {
+        detected: true,
+        brand
+      };
+    }
+  }
+
+  return {
+    detected: false,
+    brand: null
+  };
+}
 async function analyzeWebsite(input) {
   let url;
 
