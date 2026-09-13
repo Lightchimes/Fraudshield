@@ -759,40 +759,11 @@ async function analyzePhone(input, env) {
 
 
 const ipqsKey =
-  rawIpqsKey.trim();
+  env && env.IPQS_API_KEY
+    ? String(env.IPQS_API_KEY).trim()
+    : "";
 
-signals.push(
-  "IPQS secret binding detected: " +
-  (ipqsKey ? "YES" : "NO") +
-  "."
-);
-
-if (ipqsKey) {
-  signals.push(
-    "IPQS secret length: " +
-    ipqsKey.length +
-    " characters."
-  );
-
-  signals.push(
-    "IPQS secret had surrounding whitespace: " +
-    (rawIpqsKey !== ipqsKey ? "YES" : "NO") +
-    "."
-  );
-
-  signals.push(
-    "IPQS secret appears to be a placeholder: " +
-    (
-      ipqsKey === "YOUR_API_KEY_HERE" ||
-      ipqsKey === "YOUR_API_KEY"
-        ? "YES"
-        : "NO"
-    ) +
-    "."
-  );
-}
-
-  if (!ipqsKey) {
+if (!ipqsKey) {
   // No IPQS key available.
 } else {
   try {
