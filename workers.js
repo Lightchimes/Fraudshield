@@ -188,7 +188,7 @@ async function analyzeWebsite(input) {
   detectLookalikeBrand(hostname);
 
 if (lookalikeBrand.detected) {
-  score += 30;
+  score += 40;
 
   signals.push(
     "The domain appears to imitate the " +
