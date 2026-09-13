@@ -631,7 +631,278 @@ if (lookalikeBrand.detected) {
         : "No major warning signs were detected by the current FraudShield checks, but always verify important websites independently."
   };
 }
+function analyzeEmailIntelligence(input) {
+  const text = String(input || "").trim();
+  const lower = text.toLowerCase();
 
+  let score = 0;
+  const signals = [];
+
+  // Extract email addresses.
+  const emails =
+    text.match(
+      /[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/gi
+    ) || [];
+
+  // Look for sender/from addresses.
+  const senderMatch =
+    text.match(
+      /(?:from|sender)\s*:\s*([a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,})/i
+    );
+
+  const sender =
+    senderMatch
+      ? senderMatch[1].toLowerCase()
+      : null;
+
+  if (emails.length > 0) {
+    signals.push(
+      "The email content contains an email address."
+    );
+  }
+
+  // Common free/disposable email providers.
+  const freeEmailDomains = [
+    "gmail.com",
+    "yahoo.com",
+    "outlook.com",
+    "hotmail.com",
+    "icloud.com",
+    "proton.me",
+    "protonmail.com"
+  ];
+
+  if (
+    sender &&
+    freeEmailDomains.some(
+      domain => sender.endsWith("@" + domain)
+    )
+  ) {
+    score += 5;
+
+    signals.push(
+      "The sender uses a common free email provider. This is not proof of fraud, but verify the sender independently."
+    );
+  }
+
+  // Suspicious sender/domain patterns.
+  const suspiciousEmailPatterns = [
+    "support-",
+    "security-",
+    "verify-",
+    "account-",
+    "admin-",
+    "billing-",
+    "payment-",
+    "helpdesk-",
+    "login-"
+  ];
+
+  if (
+    sender &&
+    suspiciousEmailPatterns.some(
+      pattern => sender.includes(pattern)
+    )
+  ) {
+    score += 15;
+
+    signals.push(
+      "The sender address uses a pattern commonly associated with impersonation or account-security messages."
+    );
+  }
+
+  // Brand impersonation in email addresses.
+  const emailBrands = [
+    "paypal",
+    "facebook",
+    "instagram",
+    "whatsapp",
+    "telegram",
+    "microsoft",
+    "google",
+    "apple",
+    "amazon",
+    "binance"
+  ];
+
+  const officialEmailDomains = {
+    paypal: ["paypal.com"],
+    facebook: ["facebook.com", "facebook.net"],
+    instagram: ["instagram.com"],
+    whatsapp: ["whatsapp.com"],
+    telegram: ["telegram.org"],
+    microsoft: [
+      "microsoft.com",
+      "live.com",
+      "office.com",
+      "microsoftonline.com"
+    ],
+    google: ["google.com"],
+    apple: ["apple.com", "icloud.com"],
+    amazon: ["amazon.com"],
+    binance: ["binance.com"]
+  };
+
+  if (sender) {
+    const senderDomain =
+      sender.split("@")[1] || "";
+
+    for (const brand of emailBrands) {
+      if (
+        sender.includes(brand) &&
+        !officialEmailDomains[brand].some(
+          domain =>
+            senderDomain === domain ||
+            senderDomain.endsWith("." + domain)
+        )
+      ) {
+        score += 30;
+
+        signals.push(
+          "The sender address appears to use the " +
+          brand +
+          " brand but is not from an official " +
+          brand +
+          " domain."
+        );
+
+        break;
+      }
+    }
+  }
+
+  // Lookalike spelling in sender domains.
+  if (sender) {
+    const senderDomain =
+      sender.split("@")[1] || "";
+
+    const normalizedDomain =
+      senderDomain
+        .replace(/0/g, "o")
+        .replace(/1/g, "l")
+        .replace(/3/g, "e")
+        .replace(/5/g, "s")
+        .replace(/7/g, "t");
+
+    for (const brand of emailBrands) {
+      if (
+        normalizedDomain.includes(brand) &&
+        !officialEmailDomains[brand].some(
+          domain =>
+            senderDomain === domain ||
+            senderDomain.endsWith("." + domain)
+        )
+      ) {
+        score += 30;
+
+        signals.push(
+          "The sender domain appears to imitate the " +
+          brand +
+          " brand using a lookalike spelling."
+        );
+
+        break;
+      }
+    }
+  }
+
+  // Reply-To address mismatch.
+  const replyToMatch =
+    text.match(
+      /reply-to\s*:\s*([a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,})/i
+    );
+
+  if (sender && replyToMatch) {
+    const replyTo =
+      replyToMatch[1].toLowerCase();
+
+    const senderDomain =
+      sender.split("@")[1] || "";
+
+    const replyDomain =
+      replyTo.split("@")[1] || "";
+
+    if (
+      senderDomain &&
+      replyDomain &&
+      senderDomain !== replyDomain
+    ) {
+      score += 25;
+
+      signals.push(
+        "The sender and Reply-To addresses use different domains."
+      );
+    }
+  }
+
+  // Suspicious email links.
+  const hasLink =
+    /https?:\/\/|www\./i.test(text);
+
+  if (hasLink) {
+    score += 10;
+
+    signals.push(
+      "The email contains a web link."
+    );
+  }
+
+  // Strong social-engineering combinations.
+  const hasUrgency =
+    /urgent|immediately|act now|within 24 hours|account will be closed|final notice/i.test(
+      lower
+    );
+
+  const requestsMoney =
+    /send money|transfer|payment|invoice|bank|bitcoin|crypto|wallet|fee|deposit|funds|naira|₦/i.test(
+      lower
+    );
+
+  const requestsCredentials =
+    /password|otp|one time password|verification code|pin|cvv|passcode|login/i.test(
+      lower
+    );
+
+  if (hasUrgency) {
+    score += 15;
+
+    signals.push(
+      "The email uses urgency or pressure."
+    );
+  }
+
+  if (requestsMoney) {
+    score += 20;
+
+    signals.push(
+      "The email involves money, payment, banking, or financial activity."
+    );
+  }
+
+  if (requestsCredentials) {
+    score += 25;
+
+    signals.push(
+      "The email requests or mentions sensitive credentials or verification information."
+    );
+  }
+
+  if (
+    hasUrgency &&
+    (requestsMoney || requestsCredentials)
+  ) {
+    score += 20;
+
+    signals.push(
+      "Urgency is combined with a financial or credential-related request."
+    );
+  }
+
+  return {
+    score,
+    signals
+  };
+}
 async function analyzeMessage(input) {
   const text = input.trim().toLowerCase();
 
