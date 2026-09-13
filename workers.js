@@ -1610,12 +1610,39 @@ export default {
       ) {
         result =
           await analyzeWebsite(input);
-      } else if (
-        type === "message" ||
-        type === "email"
-      ) {
-        result =
-          await analyzeMessage(input);
+      } else if (type === "email") {
+  const emailIntelligence =
+    analyzeEmailIntelligence(input);
+
+  const messageResult =
+    await analyzeMessage(input);
+
+  result = {
+    ...messageResult,
+    type: "email",
+    score: getRisk(
+      messageResult.score +
+      emailIntelligence.score
+    ).score,
+    level: getRisk(
+      messageResult.score +
+      emailIntelligence.score
+    ).level,
+    signals: [
+      ...emailIntelligence.signals,
+      ...messageResult.signals
+    ]
+  };
+
+  result.advice =
+    result.score >= 70
+      ? "Do not send money, passwords, OTPs, PINs, or banking information. Verify the sender through an independent channel."
+      : result.score >= 40
+      ? "Be cautious. Verify the sender, email domain, links, and any request independently before taking action."
+      : "No major warning signs were detected by the current email checks.";
+} else if (type === "message") {
+  result =
+    await analyzeMessage(input);
       } else if (
         type === "phone"
       ) {
