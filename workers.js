@@ -339,6 +339,14 @@ async function analyzeWebsite(input) {
   const fullUrl = url.href.toLowerCase();
   const lookalikeBrand =
   detectLookalikeBrand(hostname);
+  const urlIntelligence =
+  analyzeUrlIntelligence(url);
+
+score += urlIntelligence.score;
+
+signals.push(
+  ...urlIntelligence.signals
+);
 
 if (lookalikeBrand.detected) {
   score += 40;
