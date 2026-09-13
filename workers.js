@@ -162,6 +162,159 @@ function detectLookalikeBrand(hostname) {
     brand: null
   };
 }
+function analyzeUrlIntelligence(url) {
+  let score = 0;
+  const signals = [];
+
+  const hostname = url.hostname.toLowerCase();
+  const pathname = url.pathname.toLowerCase();
+  const search = url.search.toLowerCase();
+  const fullUrl = url.href.toLowerCase();
+
+  // Redirect parameters can hide the real destination.
+  const redirectParameters = [
+    "url=",
+    "redirect=",
+    "redirect_url=",
+    "redirect_uri=",
+    "return=",
+    "return_url=",
+    "next=",
+    "continue=",
+    "target=",
+    "dest=",
+    "destination="
+  ];
+
+  const hasRedirectParameter =
+    redirectParameters.some(
+      parameter => search.includes(parameter)
+    );
+
+  if (hasRedirectParameter) {
+    score += 15;
+
+    signals.push(
+      "The URL contains a redirect parameter that may send the user to another destination."
+    );
+  }
+
+  // Sensitive information placed inside URL parameters.
+  const sensitiveParameters = [
+    "password=",
+    "passwd=",
+    "pass=",
+    "otp=",
+    "pin=",
+    "cvv=",
+    "token=",
+    "secret=",
+    "apikey=",
+    "api_key="
+  ];
+
+  const hasSensitiveParameter =
+    sensitiveParameters.some(
+      parameter => search.includes(parameter)
+    );
+
+  if (hasSensitiveParameter) {
+    score += 25;
+
+    signals.push(
+      "The URL contains a parameter that appears to reference sensitive credentials or security information."
+    );
+  }
+
+  // Multiple query parameters can sometimes indicate tracking,
+  // redirection, or obfuscation. This is only a weak signal.
+  const queryParameterCount =
+    search
+      ? search.slice(1).split("&").filter(Boolean).length
+      : 0;
+
+  if (queryParameterCount >= 6) {
+    score += 10;
+
+    signals.push(
+      "The URL contains an unusually large number of query parameters."
+    );
+  }
+
+  // Excessive path depth.
+  const pathParts =
+    pathname
+      .split("/")
+      .filter(Boolean);
+
+  if (pathParts.length >= 6) {
+    score += 10;
+
+    signals.push(
+      "The URL contains an unusually deep path structure."
+    );
+  }
+
+  // Suspicious double-slash path pattern.
+  if (
+    pathname.includes("//")
+  ) {
+    score += 10;
+
+    signals.push(
+      "The URL contains an unusual double-slash path pattern."
+    );
+  }
+
+  // Common executable/download file patterns.
+  const suspiciousFileExtensions = [
+    ".exe",
+    ".scr",
+    ".bat",
+    ".cmd",
+    ".msi",
+    ".apk",
+    ".zip"
+  ];
+
+  if (
+    suspiciousFileExtensions.some(
+      extension => pathname.endsWith(extension)
+    )
+  ) {
+    score += 20;
+
+    signals.push(
+      "The URL points to a file type that can potentially deliver executable or compressed content."
+    );
+  }
+
+  // Very long query strings can be used for obfuscation.
+  if (search.length > 200) {
+    score += 10;
+
+    signals.push(
+      "The URL contains an unusually long query string."
+    );
+  }
+
+  // Obfuscated hexadecimal or encoded-looking URL content.
+  const encodedParameterCount =
+    (fullUrl.match(/%[0-9a-f]{2}/gi) || []).length;
+
+  if (encodedParameterCount >= 4) {
+    score += 10;
+
+    signals.push(
+      "The URL contains multiple encoded characters that may make its destination harder to inspect."
+    );
+  }
+
+  return {
+    score,
+    signals
+  };
+}
 async function analyzeWebsite(input) {
   let url;
 
