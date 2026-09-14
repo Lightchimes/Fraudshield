@@ -1567,8 +1567,13 @@ function analyzeAccount(input) {
     );
   }
 
-  // Credential requests
-    // Public-person impersonation detection
+    // Credential requests
+  const credentialRequest =
+    /password|passcode|otp|one time password|verification code|pin|cvv|recovery code|login details/i.test(
+      lower
+    );
+
+  // Public-person impersonation detection
   const publicPeople = [
     "elon musk",
     "mark zuckerberg",
@@ -1619,18 +1624,6 @@ function analyzeAccount(input) {
     }
   }
 
-  if (credentialRequest) {
-    score += 25;
-
-    signals.push(
-      "The account information requests or references sensitive credentials or security codes."
-    );
-  }
-  const credentialRequest =
-    /password|passcode|otp|one time password|verification code|pin|cvv|recovery code|login details/i.test(
-      lower
-    );
-  
   if (credentialRequest) {
     score += 25;
 
