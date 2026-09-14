@@ -1712,10 +1712,40 @@ function analyzeAccount(input) {
   }
 
   // Username-like suspicious patterns
-  const suspiciousUsername =
-    /official[a-z0-9_-]+|support[a-z0-9_-]+|admin[a-z0-9_-]+|security[a-z0-9_-]+|ceo[a-z0-9_-]+/i.test(
-      lower
-    );
+const usernameMatch =
+  text.match(
+    /@([a-z0-9._-]{4,100})/i
+  );
+
+const username =
+  usernameMatch
+    ? usernameMatch[1].toLowerCase()
+    : "";
+
+const suspiciousUsername =
+  /^(official|support|admin|security|ceo)[a-z0-9._-]+$/i.test(
+    username
+  );
+
+if (suspiciousUsername) {
+  score += 10;
+
+  signals.push(
+    "The username or account identifier resembles an authority or support account."
+  );
+}
+
+// Very long username/profile identifiers
+if (
+  username &&
+  username.length > 30
+) {
+  score += 10;
+
+  signals.push(
+    "The account identifier is unusually long."
+  );
+}
 
   if (suspiciousUsername) {
     score += 10;
