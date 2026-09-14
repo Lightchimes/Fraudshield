@@ -863,40 +863,8 @@ function analyzeEmailIntelligence(input) {
       lower
     );
 
-  if (hasUrgency) {
-    score += 15;
-
-    signals.push(
-      "The email uses urgency or pressure."
-    );
-  }
-
-  if (requestsMoney) {
-    score += 20;
-
-    signals.push(
-      "The email involves money, payment, banking, or financial activity."
-    );
-  }
-
-  if (requestsCredentials) {
-    score += 25;
-
-    signals.push(
-      "The email requests or mentions sensitive credentials or verification information."
-    );
-  }
-
-  if (
-    hasUrgency &&
-    (requestsMoney || requestsCredentials)
-  ) {
-    score += 20;
-
-    signals.push(
-      "Urgency is combined with a financial or credential-related request."
-    );
-  }
+  // Urgency, money and credential risks are handled
+// by analyzeMessage() so they are not double-counted.
 
   return {
     score,
