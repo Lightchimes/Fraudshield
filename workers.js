@@ -1813,7 +1813,7 @@ export default {
         return response(
           {
             error:
-              "Unknown analysis type. Use website, message, phone, or account."
+              "Unknown analysis type. Use website, email, message, phone, or account."
           },
           400
         );
