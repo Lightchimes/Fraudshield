@@ -1446,9 +1446,9 @@ const ipqsResponse = await fetch(
   };
 }
 
-async function analyzeAccount(input) {
-  const text =
-    String(input || "").trim();
+function analyzeAccount(input) {
+  const text = String(input || "").trim();
+  const lower = text.toLowerCase();
 
   let score = 0;
   const signals = [];
@@ -1461,35 +1461,243 @@ async function analyzeAccount(input) {
         "No account or profile information was supplied."
       ],
       advice:
-        "Enter a username, profile URL, or account information to analyze."
+        "Enter a username, profile URL, phone number, or account information to analyze."
     };
   }
 
-  if (
-    /verified|official|support|admin|manager|ceo|crypto|investment|giveaway|prize/i.test(text)
-  ) {
+  // Platform detection
+  const platforms = [
+    "telegram",
+    "whatsapp",
+    "facebook",
+    "instagram",
+    "tiktok",
+    "twitter",
+    "x.com",
+    "youtube",
+    "linkedin"
+  ];
+
+  const detectedPlatforms = platforms.filter(
+    platform => lower.includes(platform)
+  );
+
+  if (detectedPlatforms.length > 0) {
+    signals.push(
+      "Platform detected: " +
+      detectedPlatforms.join(", ") +
+      "."
+    );
+  }
+
+  // Profile URL detection
+  const hasProfileUrl =
+    /https?:\/\/|www\./i.test(text);
+
+  if (hasProfileUrl) {
+    score += 10;
+
+    signals.push(
+      "The account information contains a profile or web address."
+    );
+  }
+
+  // High-risk impersonation terms
+  const impersonationTerms = [
+    "official",
+    "verified",
+    "support",
+    "customer service",
+    "admin",
+    "administrator",
+    "manager",
+    "ceo",
+    "founder",
+    "security",
+    "helpdesk",
+    "recovery",
+    "agent"
+  ];
+
+  const matchedImpersonationTerms =
+    impersonationTerms.filter(
+      term => lower.includes(term)
+    );
+
+  if (matchedImpersonationTerms.length > 0) {
+    score += 15;
+
+    signals.push(
+      "The profile uses authority, support, verification, or official-looking language."
+    );
+  }
+
+  // Financial/investment language
+  const financialTerms = [
+    "investment",
+    "invest",
+    "profit",
+    "crypto",
+    "bitcoin",
+    "forex",
+    "trading",
+    "wallet",
+    "giveaway",
+    "prize",
+    "lottery",
+    "double your money",
+    "guaranteed return",
+    "guaranteed profit"
+  ];
+
+  const matchedFinancialTerms =
+    financialTerms.filter(
+      term => lower.includes(term)
+    );
+
+  if (matchedFinancialTerms.length > 0) {
     score += 20;
 
     signals.push(
-      "The account information contains terms commonly seen in impersonation, investment, support, or giveaway scams."
+      "The account contains investment, cryptocurrency, giveaway, prize, or financial-promotion language."
     );
   }
 
-  if (
-    /telegram|whatsapp|facebook|instagram|tiktok|twitter|x\.com|youtube|linkedin/i.test(text)
-  ) {
+  // Requests for money
+  const moneyRequest =
+    /send money|send me|transfer|payment|deposit|fee|cash|funds|pay now|pay immediately|bank transfer|crypto payment/i.test(
+      lower
+    );
+
+  if (moneyRequest) {
+    score += 25;
+
     signals.push(
-      "A social-media or messaging platform is referenced."
+      "The account information contains language associated with requesting money or payment."
     );
   }
 
+  // Credential requests
+  const credentialRequest =
+    /password|passcode|otp|one time password|verification code|pin|cvv|recovery code|login details/i.test(
+      lower
+    );
+
+  if (credentialRequest) {
+    score += 25;
+
+    signals.push(
+      "The account information requests or references sensitive credentials or security codes."
+    );
+  }
+
+  // Urgency
+  const urgency =
+    /urgent|immediately|right now|act now|hurry|as soon as possible|quickly/i.test(
+      lower
+    );
+
+  if (urgency) {
+    score += 15;
+
+    signals.push(
+      "The account information uses urgency or pressure."
+    );
+  }
+
+  // Secrecy
+  const secrecy =
+    /keep this secret|keep it secret|don't tell anyone|do not tell anyone|keep this between us|tell nobody|don't share this/i.test(
+      lower
+    );
+
+  if (secrecy) {
+    score += 20;
+
+    signals.push(
+      "The account information pressures the recipient to keep the communication secret."
+    );
+  }
+
+  // Prize + money combination
+  const prize =
+    /giveaway|prize|lottery|winner|you won|free gift|claim your/i.test(
+      lower
+    );
+
+  if (prize && moneyRequest) {
+    score += 20;
+
+    signals.push(
+      "A prize or giveaway claim is combined with a financial request."
+    );
+  }
+
+  // Investment + guaranteed returns
   if (
-    /https?:\/\/|www\./i.test(text)
+    /investment|crypto|bitcoin|forex|trading/i.test(lower) &&
+    /guaranteed|risk free|double your money|100% profit/i.test(lower)
+  ) {
+    score += 25;
+
+    signals.push(
+      "The account makes unusually strong or guaranteed investment-profit claims."
+    );
+  }
+
+  // Multiple risk combinations
+  if (urgency && moneyRequest) {
+    score += 20;
+
+    signals.push(
+      "Urgency is combined with a financial request."
+    );
+  }
+
+  if (urgency && credentialRequest) {
+    score += 20;
+
+    signals.push(
+      "Urgency is combined with a request for sensitive account information."
+    );
+  }
+
+  if (moneyRequest && credentialRequest) {
+    score += 20;
+
+    signals.push(
+      "The account combines a financial request with sensitive credentials."
+    );
+  }
+
+  // Username-like suspicious patterns
+  const suspiciousUsername =
+    /official[a-z0-9_-]+|support[a-z0-9_-]+|admin[a-z0-9_-]+|security[a-z0-9_-]+|ceo[a-z0-9_-]+/i.test(
+      lower
+    );
+
+  if (suspiciousUsername) {
+    score += 10;
+
+    signals.push(
+      "The username or account identifier resembles an authority or support account."
+    );
+  }
+
+  // Very long username/profile identifiers
+  const usernameMatch =
+    text.match(
+      /@([a-z0-9._-]{4,100})/i
+    );
+
+  if (
+    usernameMatch &&
+    usernameMatch[1].length > 30
   ) {
     score += 10;
 
     signals.push(
-      "The account information contains a web address."
+      "The account identifier is unusually long."
     );
   }
 
@@ -1501,10 +1709,10 @@ async function analyzeAccount(input) {
     signals,
     advice:
       risk.score >= 70
-        ? "Do not trust the account without independent verification."
+        ? "Treat this account as high risk. Do not send money, passwords, OTPs, PINs, recovery codes, or banking information. Verify the account through the platform's official channels."
         : risk.score >= 40
-        ? "Verify the account through the platform's official channels."
-        : "No major warning signs were detected by the current account checks."
+        ? "Use caution. Do not rely on profile names, badges, photos, or claims of being official. Verify the account through an independent official channel."
+        : "No major warning signs were detected by the current account checks. This does not prove the account is genuine; verify important accounts independently."
   };
 }
 
