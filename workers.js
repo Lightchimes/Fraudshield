@@ -848,20 +848,7 @@ function analyzeEmailIntelligence(input) {
   }
 
   // Strong social-engineering combinations.
-  const hasUrgency =
-    /urgent|immediately|act now|within 24 hours|account will be closed|final notice/i.test(
-      lower
-    );
-
-  const requestsMoney =
-    /send money|transfer|payment|invoice|bank|bitcoin|crypto|wallet|fee|deposit|funds|naira|₦/i.test(
-      lower
-    );
-
-  const requestsCredentials =
-    /password|otp|one time password|verification code|pin|cvv|passcode|login/i.test(
-      lower
-    );
+  
 
   // Urgency, money and credential risks are handled
 // by analyzeMessage() so they are not double-counted.
