@@ -638,11 +638,6 @@ function analyzeEmailIntelligence(input) {
   let score = 0;
   const signals = [];
 
-  // Extract email addresses.
-  const emails =
-    text.match(
-      /[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/gi
-    ) || [];
 
   // Look for sender/from addresses.
   const senderMatch =
@@ -655,11 +650,6 @@ function analyzeEmailIntelligence(input) {
       ? senderMatch[1].toLowerCase()
       : null;
 
-  if (emails.length > 0) {
-    signals.push(
-      "The email content contains an email address."
-    );
-  }
 
   // Common free/disposable email providers.
   const freeEmailDomains = [
