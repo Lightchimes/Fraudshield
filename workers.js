@@ -1723,7 +1723,7 @@ const username =
     : "";
 
 const suspiciousUsername =
-  /^(official|support|admin|security|ceo)[a-z0-9._-]+$/i.test(
+  /(official|support|admin|security|ceo|verified|manager|helpdesk|recovery)/i.test(
     username
   );
 
@@ -1746,31 +1746,6 @@ if (
     "The account identifier is unusually long."
   );
 }
-
-  if (suspiciousUsername) {
-    score += 10;
-
-    signals.push(
-      "The username or account identifier resembles an authority or support account."
-    );
-  }
-
-  // Very long username/profile identifiers
-  const usernameMatch =
-    text.match(
-      /@([a-z0-9._-]{4,100})/i
-    );
-
-  if (
-    usernameMatch &&
-    usernameMatch[1].length > 30
-  ) {
-    score += 10;
-
-    signals.push(
-      "The account identifier is unusually long."
-    );
-  }
 
   const risk = getRisk(score);
 
