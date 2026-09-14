@@ -1568,11 +1568,47 @@ function analyzeAccount(input) {
   }
 
   // Credential requests
-  const credentialRequest =
-    /password|passcode|otp|one time password|verification code|pin|cvv|recovery code|login details/i.test(
-      lower
+    // Public-person impersonation detection
+  const publicPeople = [
+    "elon musk",
+    "mark zuckerberg",
+    "bill gates",
+    "jeff bezos",
+    "donald trump",
+    "barack obama",
+    "cristiano ronaldo",
+    "lionel messi",
+    "mr beast",
+    "taylor swift"
+  ];
+
+  const detectedPublicPerson =
+    publicPeople.find(person =>
+      lower.includes(person)
     );
-  
+
+  if (detectedPublicPerson) {
+    score += 25;
+
+    signals.push(
+      "The profile appears to use the name of a well-known public figure."
+    );
+
+    if (matchedFinancialTerms.length > 0) {
+      score += 20;
+
+      signals.push(
+        "The public-figure identity is combined with investment, financial, or promotional language."
+      );
+    }
+
+    if (moneyRequest) {
+      score += 20;
+
+      signals.push(
+        "The public-figure identity is combined with a request for money or payment."
+      );
+    }
 
     if (credentialRequest) {
       score += 20;
@@ -1582,6 +1618,19 @@ function analyzeAccount(input) {
       );
     }
   }
+
+  if (credentialRequest) {
+    score += 25;
+
+    signals.push(
+      "The account information requests or references sensitive credentials or security codes."
+    );
+  }
+  const credentialRequest =
+    /password|passcode|otp|one time password|verification code|pin|cvv|recovery code|login details/i.test(
+      lower
+    );
+  
   if (credentialRequest) {
     score += 25;
 
