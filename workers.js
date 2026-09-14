@@ -1521,7 +1521,58 @@ function analyzeAccount(input) {
       "The profile uses authority, support, verification, or official-looking language."
     );
   }
+  // Public-person impersonation detection
+  const publicPeople = [
+    "elon musk",
+    "mark zuckerberg",
+    "bill gates",
+    "jeff bezos",
+    "donald trump",
+    "barack obama",
+    "cristiano ronaldo",
+    "lionel messi",
+    "mr beast",
+    "taylor swift"
+  ];
 
+  const detectedPublicPerson =
+    publicPeople.find(person =>
+      lower.includes(person)
+    );
+
+  if (detectedPublicPerson) {
+    score += 25;
+
+    signals.push(
+      "The profile appears to use the name of a well-known public figure."
+    );
+
+    // Stronger warning when the public-person identity
+    // is combined with financial activity.
+    if (matchedFinancialTerms.length > 0) {
+      score += 20;
+
+      signals.push(
+        "The public-figure identity is combined with investment, financial, or promotional language."
+      );
+    }
+
+    if (moneyRequest) {
+      score += 20;
+
+      signals.push(
+        "The public-figure identity is combined with a request for money or payment."
+      );
+    }
+
+    if (credentialRequest) {
+      score += 20;
+
+      signals.push(
+        "The public-figure identity is combined with a request for sensitive credentials or security codes."
+      );
+    }
+  }
   // Financial/investment language
   const financialTerms = [
     "investment",
