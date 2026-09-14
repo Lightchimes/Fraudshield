@@ -1744,10 +1744,14 @@ function analyzeAccount(input) {
 
   const risk = getRisk(score);
 
-  return {
-    type: "account",
-    ...risk,
-    signals,
+const uniqueSignals = [
+  ...new Set(signals)
+];
+
+return {
+  type: "account",
+  ...risk,
+  signals: uniqueSignals,
     advice:
       risk.score >= 70
         ? "Treat this account as high risk. Do not send money, passwords, OTPs, PINs, recovery codes, or banking information. Verify the account through the platform's official channels."
