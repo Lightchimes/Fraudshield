@@ -1765,7 +1765,276 @@ return {
         : "No major warning signs were detected by the current account checks. This does not prove the account is genuine; verify important accounts independently."
   };
 }
+function analyzeRelationship(input) {
+  const text = String(input || "").trim();
+  const lower = text.toLowerCase();
 
+  let score = 0;
+  const signals = [];
+  const connections = [];
+
+  // -----------------------------
+  // Extract phone numbers
+  // -----------------------------
+  const phones = text.match(
+    /(?:\+234|0)\d[\d\s().-]{8,14}\d/g
+  ) || [];
+
+  if (phones.length > 0) {
+    connections.push(
+      ...phones.map(phone => ({
+        type: "phone",
+        value: phone.trim()
+      }))
+    );
+  }
+
+  // -----------------------------
+  // Extract email addresses
+  // -----------------------------
+  const emails = text.match(
+    /[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/gi
+  ) || [];
+
+  if (emails.length > 0) {
+    connections.push(
+      ...emails.map(email => ({
+        type: "email",
+        value: email.toLowerCase()
+      }))
+    );
+  }
+
+  // -----------------------------
+  // Extract URLs
+  // -----------------------------
+  const urls = text.match(
+    /https?:\/\/[^\s]+|www\.[^\s]+/gi
+  ) || [];
+
+  if (urls.length > 0) {
+    connections.push(
+      ...urls.map(url => ({
+        type: "website",
+        value: url.replace(/[),.!?]+$/, "")
+      }))
+    );
+  }
+
+  // -----------------------------
+  // Extract usernames
+  // -----------------------------
+  const usernames = text.match(
+    /@[a-z0-9._-]{4,100}/gi
+  ) || [];
+
+  if (usernames.length > 0) {
+    connections.push(
+      ...usernames.map(username => ({
+        type: "account",
+        value: username.toLowerCase()
+      }))
+    );
+  }
+
+  // -----------------------------
+  // Detect platforms
+  // -----------------------------
+  const platforms = [
+    "telegram",
+    "whatsapp",
+    "facebook",
+    "instagram",
+    "tiktok",
+    "twitter",
+    "x.com",
+    "youtube",
+    "linkedin"
+  ];
+
+  const detectedPlatforms = platforms.filter(
+    platform => lower.includes(platform)
+  );
+
+  // -----------------------------
+  // Relationship strength
+  // -----------------------------
+
+  if (phones.length > 0 && emails.length > 0) {
+    score += 15;
+
+    signals.push(
+      "The submitted information connects a phone number with an email address."
+    );
+  }
+
+  if (emails.length > 0 && urls.length > 0) {
+    score += 15;
+
+    signals.push(
+      "The submitted information connects an email address with a website or URL."
+    );
+  }
+
+  if (usernames.length > 0 && phones.length > 0) {
+    score += 15;
+
+    signals.push(
+      "The submitted information connects a social account identifier with a phone number."
+    );
+  }
+
+  if (usernames.length > 0 && emails.length > 0) {
+    score += 15;
+
+    signals.push(
+      "The submitted information connects a social account identifier with an email address."
+    );
+  }
+
+  if (usernames.length > 0 && urls.length > 0) {
+    score += 15;
+
+    signals.push(
+      "The submitted information connects a social account identifier with a website or URL."
+    );
+  }
+
+  if (phones.length > 0 && urls.length > 0) {
+    score += 10;
+
+    signals.push(
+      "The submitted information connects a phone number with a website or URL."
+    );
+  }
+
+  // -----------------------------
+  // Multiple identities
+  // -----------------------------
+
+  if (connections.length >= 3) {
+    score += 10;
+
+    signals.push(
+      "Multiple identity indicators were supplied for relationship analysis."
+    );
+  }
+
+  if (connections.length >= 4) {
+    score += 10;
+
+    signals.push(
+      "The information forms a broader identity relationship across multiple data types."
+    );
+  }
+
+  // -----------------------------
+  // Suspicious relationship patterns
+  // -----------------------------
+
+  if (
+    /official|support|security|admin|verified|manager|helpdesk|recovery/i.test(
+      lower
+    )
+  ) {
+    score += 10;
+
+    signals.push(
+      "The relationship contains authority, support, security, or official-looking language."
+    );
+  }
+
+  if (
+    /investment|crypto|bitcoin|forex|trading|profit|giveaway|prize/i.test(
+      lower
+    )
+  ) {
+    score += 15;
+
+    signals.push(
+      "The relationship contains financial, investment, cryptocurrency, giveaway, or prize language."
+    );
+  }
+
+  if (
+    /send money|send me|transfer|payment|deposit|fee|bank transfer|pay now/i.test(
+      lower
+    )
+  ) {
+    score += 20;
+
+    signals.push(
+      "The relationship contains a request for money or payment."
+    );
+  }
+
+  if (
+    /password|otp|verification code|passcode|pin|cvv|recovery code/i.test(
+      lower
+    )
+  ) {
+    score += 20;
+
+    signals.push(
+      "The relationship contains sensitive credential or security-code language."
+    );
+  }
+
+  // -----------------------------
+  // Platform information
+  // -----------------------------
+
+  if (detectedPlatforms.length > 0) {
+    signals.push(
+      "Platforms detected: " +
+      detectedPlatforms.join(", ") +
+      "."
+    );
+  }
+
+  // -----------------------------
+  // Remove duplicate connections
+  // -----------------------------
+
+  const uniqueConnections = [];
+  const seenConnections = new Set();
+
+  for (const connection of connections) {
+    const key =
+      connection.type +
+      ":" +
+      connection.value;
+
+    if (!seenConnections.has(key)) {
+      seenConnections.add(key);
+      uniqueConnections.push(connection);
+    }
+  }
+
+  // -----------------------------
+  // Risk
+  // -----------------------------
+
+  const risk = getRisk(score);
+
+  const uniqueSignals = [
+    ...new Set(signals)
+  ];
+
+  return {
+    type: "relationship",
+    ...risk,
+    connections: uniqueConnections,
+    platforms: detectedPlatforms,
+    signals: uniqueSignals,
+    advice:
+      risk.score >= 70
+        ? "Treat this relationship as high risk. Verify each identity independently and do not send money, passwords, OTPs, PINs, or banking information."
+        : risk.score >= 40
+        ? "Use caution. Verify the connected identities independently before trusting requests or transactions."
+        : "No major relationship warning signs were detected by the current checks. This does not prove the identities are genuine."
+  };
+}
 export default {
   async fetch(request, env) {
     if (request.method === "OPTIONS") {
