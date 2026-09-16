@@ -1422,7 +1422,8 @@ const ipqsResponse = await fetch(
   }
 
   const risk = getRisk(score);
-
+const hasWarningSignals =
+  score > 0;
   return {
     type: "phone",
     ...risk,
