@@ -1635,6 +1635,32 @@ function analyzeAccount(input) {
   }
 
   // Urgency
+  // Job / recruitment scam detection
+const jobRecruitment =
+  /job|employment|vacancy|recruitment|recruiting|hiring|career|work from home|remote position|salary|hr|human resources|registration fee|application fee|interview/i.test(
+    lower
+  );
+
+if (jobRecruitment) {
+  score += 20;
+
+  signals.push(
+    "The account contains job, recruitment, employment, or hiring-related language."
+  );
+}
+
+if (
+  jobRecruitment &&
+  /no interview|required fee|registration fee|application fee|pay.*job|pay.*position|send.*fee/i.test(
+    lower
+  )
+) {
+  score += 25;
+
+  signals.push(
+    "The account may involve a job or recruitment scam requesting an unusual payment or bypassing normal hiring steps."
+  );
+}
   const urgency =
     /urgent|immediately|right now|act now|hurry|as soon as possible|quickly/i.test(
       lower
