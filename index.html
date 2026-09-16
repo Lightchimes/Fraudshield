@@ -100,7 +100,8 @@
   FraudShield MVP • Built as a defensive anti-fraud prototype
 </footer>
 
-<script>
+ 
+  <script>
 
 const tabs = document.querySelectorAll(".tab");
 const input = document.getElementById("input");
@@ -195,6 +196,13 @@ document.getElementById("check").onclick=async()=>{
 
   ul.innerHTML="";
 
+  const oldConnections =
+    document.getElementById("connections");
+
+  if(oldConnections){
+    oldConnections.remove();
+  }
+
   scoreEl.textContent="Checking...";
 
   scoreEl.className="score";
@@ -246,46 +254,7 @@ document.getElementById("check").onclick=async()=>{
       );
 
     }
-if(type==="relationship" && Array.isArray(d.connections)){
 
-  const oldConnections =
-    document.getElementById("connections");
-
-  if(oldConnections){
-    oldConnections.remove();
-  }
-
-  const connectionBox =
-    document.createElement("div");
-
-  connectionBox.id="connections";
-  connectionBox.style.marginTop="18px";
-
-  connectionBox.innerHTML =
-    "<strong>Connections found:</strong>";
-
-  const connectionList =
-    document.createElement("ul");
-
-  d.connections.forEach(connection=>{
-
-    const li =
-      document.createElement("li");
-
-    li.textContent =
-      typeof connection === "string"
-      ? connection
-      : JSON.stringify(connection);
-
-    connectionList.appendChild(li);
-
-  });
-
-  connectionBox.appendChild(connectionList);
-
-  box.appendChild(connectionBox);
-
-}
     const s=Number(d.score||0);
 
     scoreEl.textContent=s+"/100";
@@ -309,6 +278,111 @@ if(type==="relationship" && Array.isArray(d.connections)){
       ul.appendChild(li);
 
     });
+
+    if(type==="relationship"){
+
+      const connections =
+        Array.isArray(d.connections)
+        ? d.connections
+        : [];
+
+      const platforms =
+        Array.isArray(d.platforms)
+        ? d.platforms
+        : [];
+
+      if(connections.length || platforms.length){
+
+        const connectionBox =
+          document.createElement("div");
+
+        connectionBox.id="connections";
+
+        connectionBox.style.marginTop="18px";
+
+        const title =
+          document.createElement("strong");
+
+        title.textContent="Relationship intelligence";
+
+        connectionBox.appendChild(title);
+
+        if(connections.length){
+
+          const connectionTitle =
+            document.createElement("div");
+
+          connectionTitle.style.marginTop="10px";
+          connectionTitle.style.fontWeight="700";
+
+          connectionTitle.textContent=
+            "Connections found:";
+
+          connectionBox.appendChild(connectionTitle);
+
+          const connectionList =
+            document.createElement("ul");
+
+          connections.forEach(connection=>{
+
+            const li =
+              document.createElement("li");
+
+            if(typeof connection==="string"){
+
+              li.textContent=connection;
+
+            }else{
+
+              li.textContent=
+                JSON.stringify(connection);
+
+            }
+
+            connectionList.appendChild(li);
+
+          });
+
+          connectionBox.appendChild(connectionList);
+
+        }
+
+        if(platforms.length){
+
+          const platformTitle =
+            document.createElement("div");
+
+          platformTitle.style.marginTop="10px";
+          platformTitle.style.fontWeight="700";
+
+          platformTitle.textContent=
+            "Platforms detected:";
+
+          connectionBox.appendChild(platformTitle);
+
+          const platformList =
+            document.createElement("ul");
+
+          platforms.forEach(platform=>{
+
+            const li =
+              document.createElement("li");
+
+            li.textContent=platform;
+
+            platformList.appendChild(li);
+
+          });
+
+          connectionBox.appendChild(platformList);
+
+        }
+
+        box.appendChild(connectionBox);
+
+      }
+
+    }
 
     advice.textContent=
       d.advice ||
@@ -338,7 +412,6 @@ if(type==="relationship" && Array.isArray(d.connections)){
 };
 
 </script>
-
 </body>
 </html>
 ```
