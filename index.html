@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -27,39 +28,62 @@
   footer{text-align:center;color:#68738a;padding:20px}
 </style>
 </head>
+
 <body>
+
 <header>
   <h1>FraudShield</h1>
   <p>AI-assisted scam screening for websites, messages, phone numbers and accounts.</p>
 </header>
 
 <div class="wrap">
+
   <div class="card">
+
     <div class="tabs">
       <button class="tab active" data-type="url">Website</button>
-<button class="tab" data-type="message">Message/Email</button>
-<button class="tab" data-type="phone">Phone</button>
-<button class="tab" data-type="account">Account</button>
-<button class="tab" data-type="relationship">Relationship</button>
+      <button class="tab" data-type="message">Message/Email</button>
+      <button class="tab" data-type="phone">Phone</button>
+      <button class="tab" data-type="account">Account</button>
+      <button class="tab" data-type="relationship">Relationship</button>
     </div>
 
-    <label id="label" style="display:block;margin-top:20px;font-weight:700">Paste a website URL</label>
+    <label id="label" style="display:block;margin-top:20px;font-weight:700">
+      Paste a website URL
+    </label>
+
     <textarea id="input" placeholder="Example: https://example.com"></textarea>
-    <button class="primary" id="check">CHECK FOR SCAM SIGNALS</button>
-    <p class="small">This MVP gives a screening/risk assessment. It does not prove that a person, website or account is fraudulent.</p>
+
+    <button class="primary" id="check">
+      CHECK FOR SCAM SIGNALS
+    </button>
+
+    <p class="small">
+      This MVP gives a screening/risk assessment. It does not prove that a person, website or account is fraudulent.
+    </p>
 
     <div class="result" id="result">
+
       <div>Risk score</div>
+
       <div class="score" id="score"></div>
+
       <div id="level" style="font-weight:800;margin:8px 0"></div>
+
       <strong>Signals found:</strong>
+
       <ul id="signals"></ul>
+
       <div id="advice"></div>
+
     </div>
+
   </div>
 
   <div class="card">
+
     <h2>Next version</h2>
+
     <ul>
       <li>Real threat-intelligence checks for suspicious URLs.</li>
       <li>AI analysis of scam emails and social-engineering messages.</li>
@@ -67,143 +91,215 @@
       <li>User accounts, history and a database.</li>
       <li>Optional paid premium checks using Telegram Stars.</li>
     </ul>
+
   </div>
+
 </div>
-<footer>FraudShield MVP • Built as a defensive anti-fraud prototype</footer>
+
+<footer>
+  FraudShield MVP • Built as a defensive anti-fraud prototype
+</footer>
 
 <script>
+
 const tabs = document.querySelectorAll(".tab");
 const input = document.getElementById("input");
 const label = document.getElementById("label");
+
 let type = "url";
 
 const prompts = {
-  <!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>FraudShield — Scam Detector MVP</title>
-<style>
-  *{box-sizing:border-box}
-  body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#f4f7fb;color:#172033}
-  header{background:#101a35;color:white;padding:28px 18px;text-align:center}
-  header h1{margin:0 0 8px;font-size:32px}
-  header p{margin:0;color:#d8def0}
-  .wrap{max-width:900px;margin:28px auto;padding:0 16px}
-  .card{background:white;border-radius:16px;padding:22px;margin-bottom:18px;box-shadow:0 8px 25px rgba(20,35,70,.08)}
-  .tabs{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
-  button,.tab{border:0;border-radius:10px;padding:12px;cursor:pointer;font-weight:700}
-  .tab{background:#e9edf5;color:#25304a}
-  .tab.active{background:#101a35;color:white}
-  textarea,input{width:100%;padding:14px;border:1px solid #cfd6e4;border-radius:10px;font-size:16px;margin-top:10px}
-  textarea{min-height:150px;resize:vertical}
-  .primary{background:#c99528;color:white;width:100%;margin-top:12px;font-size:16px}
-  .result{display:none;margin-top:20px;padding:18px;border-radius:12px;background:#f6f8fc}
-  .score{font-size:42px;font-weight:800}
-  .low{color:#16803a}.medium{color:#a36a00}.high{color:#b42318}
-  ul{line-height:1.7}
-  .small{font-size:13px;color:#65708a}
-  footer{text-align:center;color:#68738a;padding:20px}
-</style>
-</head>
-<body>
-<header>
-  <h1>FraudShield</h1>
-  <p>AI-assisted scam screening for websites, messages, phone numbers and accounts.</p>
-</header>
 
-<div class="wrap">
-  <div class="card">
-    <div class="tabs">
-      <button class="tab active" data-type="url">Website</button>
-<button class="tab" data-type="message">Message/Email</button>
-<button class="tab" data-type="phone">Phone</button>
-<button class="tab" data-type="account">Account</button>
-<button class="tab" data-type="relationship">Relationship</button>
-    </div>
+  url:[
+    "Paste a website URL",
+    "Example: https://example.com"
+  ],
 
-    <label id="label" style="display:block;margin-top:20px;font-weight:700">Paste a website URL</label>
-    <textarea id="input" placeholder="Example: https://example.com"></textarea>
-    <button class="primary" id="check">CHECK FOR SCAM SIGNALS</button>
-    <p class="small">This MVP gives a screening/risk assessment. It does not prove that a person, website or account is fraudulent.</p>
+  email:[
+    "Paste the email content and sender details",
+    "Example: From: security-paypal@example.com\n\nYour PayPal account requires verification."
+  ],
 
-    <div class="result" id="result">
-      <div>Risk score</div>
-      <div class="score" id="score"></div>
-      <div id="level" style="font-weight:800;margin:8px 0"></div>
-      <strong>Signals found:</strong>
-      <ul id="signals"></ul>
-      <div id="advice"></div>
-    </div>
-  </div>
+  message:[
+    "Paste an SMS or social-media message",
+    "Example: Your account will be closed today. Send your OTP now..."
+  ],
 
-  <div class="card">
-    <h2>Next version</h2>
-    <ul>
-      <li>Real threat-intelligence checks for suspicious URLs.</li>
-      <li>AI analysis of scam emails and social-engineering messages.</li>
-      <li>Telegram bot with <code>/check</code> commands.</li>
-      <li>User accounts, history and a database.</li>
-      <li>Optional paid premium checks using Telegram Stars.</li>
-    </ul>
-  </div>
-</div>
-<footer>FraudShield MVP • Built as a defensive anti-fraud prototype</footer>
+  phone:[
+    "Enter a phone number or call details",
+    "Example: +234 801 234 5678"
+  ],
 
-<script>
-const tabs = document.querySelectorAll(".tab");
-const input = document.getElementById("input");
-const label = document.getElementById("label");
-let type = "url";
+  account:[
+    "Paste an account/profile URL or profile details",
+    "Example: profile URL, username, bio and suspicious message"
+  ],
 
-const prompts = {
-  url:["Paste a website URL","Example: https://example.com"],
-  email:["Paste the email content and sender details","Example: From: security-paypal@example.com\n\nYour PayPal account requires verification."],
-  message:["Paste an SMS or social-media message","Example: Your account will be closed today. Send your OTP now..."],
-  phone:["Enter a phone number or call details","Example: +234 801 234 5678"],
-  account:["Paste an account/profile URL or profile details","Example: profile URL, username, bio and suspicious message"]
+  relationship:[
+    "Enter connected details to investigate",
+    "Example: Phone: +2348012345678\nEmail: support@example.com\nAccount: @username\nWebsite: https://example.com\nPlatform: Instagram"
+  ]
+
 };
 
 tabs.forEach(t=>{
+
   t.onclick=()=>{
+
     tabs.forEach(x=>x.classList.remove("active"));
+
     t.classList.add("active");
+
     type=t.dataset.type;
+
     label.textContent=prompts[type][0];
+
     input.placeholder=prompts[type][1];
+
     input.value="";
+
     document.getElementById("result").style.display="none";
+
   };
+
 });
 
-const FRAUDSHIELD_API = "https://fraudshield-api.lightchimes.workers.dev";
-function apiTypeFor(type){ return type==="url"?"website":type; }
-document.getElementById("check").onclick=async()=>{ const text=input.value.trim(), box=document.getElementById("result"), scoreEl=document.getElementById("score"), levelEl=document.getElementById("level"), ul=document.getElementById("signals"), advice=document.getElementById("advice"); box.style.display="block"; ul.innerHTML=""; scoreEl.textContent="Checking..."; levelEl.textContent=""; advice.textContent="FraudShield is checking..."; if(!text){scoreEl.textContent="0/100";levelEl.textContent="LOWER RISK";ul.innerHTML="<li>Nothing was entered.</li>";advice.textContent="Enter something to check.";return;} try{const r=await fetch(FRAUDSHIELD_API,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({type:apiTypeFor(type),input:text})}); const d=await r.json(); if(!r.ok) throw new Error(d.error||"API request failed."); const s=Number(d.score||0); scoreEl.textContent=s+"/100"; scoreEl.className="score "+(s>=70?"high":s>=40?"medium":"low"); levelEl.textContent=d.level||"LOWER RISK"; (Array.isArray(d.signals)?d.signals:["No major warning signs were detected."]).forEach(x=>{const li=document.createElement("li");li.textContent=x;ul.appendChild(li);}); advice.textContent=d.advice||"Verify important requests independently before taking action.";}catch(e){scoreEl.textContent="ERROR";scoreEl.className="score high";levelEl.textContent="CHECK FAILED";const li=document.createElement("li");li.textContent=e.message||"Unable to connect to FraudShield API.";ul.appendChild(li);advice.textContent="Check your internet connection and try again.";} };
-</script>
-</body>
-</html>
-};
+const FRAUDSHIELD_API =
+  "https://fraudshield-api.lightchimes.workers.dev";
 
-tabs.forEach(t=>{
-  t.onclick=()=>{
-    tabs.forEach(x=>x.classList.remove("active"));
-    t.classList.add("active");
-    type=t.dataset.type;
-    label.textContent=prompts[type][0];
-    input.placeholder=prompts[type][1];
-    input.value="";
-    document.getElementById("result").style.display="none";
-  };
-});
-
-const FRAUDSHIELD_API = "https://fraudshield-api.lightchimes.workers.dev";
 function apiTypeFor(type){
+
   if(type==="url") return "website";
+
   if(type==="relationship") return "relationship";
+
   return type;
+
 }
-document.getElementById("check").onclick=async()=>{ const text=input.value.trim(), box=document.getElementById("result"), scoreEl=document.getElementById("score"), levelEl=document.getElementById("level"), ul=document.getElementById("signals"), advice=document.getElementById("advice"); box.style.display="block"; ul.innerHTML=""; scoreEl.textContent="Checking..."; levelEl.textContent=""; advice.textContent="FraudShield is checking..."; if(!text){scoreEl.textContent="0/100";levelEl.textContent="LOWER RISK";ul.innerHTML="<li>Nothing was entered.</li>";advice.textContent="Enter something to check.";return;} try{const r=await fetch(FRAUDSHIELD_API,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({type:apiTypeFor(type),input:text})}); const d=await r.json(); if(!r.ok) throw new Error(d.error||"API request failed."); const s=Number(d.score||0); scoreEl.textContent=s+"/100"; scoreEl.className="score "+(s>=70?"high":s>=40?"medium":"low"); levelEl.textContent=d.level||"LOWER RISK"; (Array.isArray(d.signals)?d.signals:["No major warning signs were detected."]).forEach(x=>{const li=document.createElement("li");li.textContent=x;ul.appendChild(li);}); advice.textContent=d.advice||"Verify important requests independently before taking action.";}catch(e){scoreEl.textContent="ERROR";scoreEl.className="score high";levelEl.textContent="CHECK FAILED";const li=document.createElement("li");li.textContent=e.message||"Unable to connect to FraudShield API.";ul.appendChild(li);advice.textContent="Check your internet connection and try again.";} };
+
+document.getElementById("check").onclick=async()=>{
+
+  const text=input.value.trim();
+
+  const box=document.getElementById("result");
+
+  const scoreEl=document.getElementById("score");
+
+  const levelEl=document.getElementById("level");
+
+  const ul=document.getElementById("signals");
+
+  const advice=document.getElementById("advice");
+
+  box.style.display="block";
+
+  ul.innerHTML="";
+
+  scoreEl.textContent="Checking...";
+
+  scoreEl.className="score";
+
+  levelEl.textContent="";
+
+  advice.textContent="FraudShield is checking...";
+
+  if(!text){
+
+    scoreEl.textContent="0/100";
+
+    levelEl.textContent="LOWER RISK";
+
+    ul.innerHTML="<li>Nothing was entered.</li>";
+
+    advice.textContent="Enter something to check.";
+
+    return;
+
+  }
+
+  try{
+
+    const r=await fetch(FRAUDSHIELD_API,{
+
+      method:"POST",
+
+      headers:{
+        "Content-Type":"application/json"
+      },
+
+      body:JSON.stringify({
+
+        type:apiTypeFor(type),
+
+        input:text
+
+      })
+
+    });
+
+    const d=await r.json();
+
+    if(!r.ok){
+
+      throw new Error(
+        d.error || "API request failed."
+      );
+
+    }
+
+    const s=Number(d.score||0);
+
+    scoreEl.textContent=s+"/100";
+
+    scoreEl.className=
+      "score "+(s>=70?"high":s>=40?"medium":"low");
+
+    levelEl.textContent=
+      d.level || "LOWER RISK";
+
+    (
+      Array.isArray(d.signals)
+      ? d.signals
+      : ["No major warning signs were detected."]
+    ).forEach(x=>{
+
+      const li=document.createElement("li");
+
+      li.textContent=x;
+
+      ul.appendChild(li);
+
+    });
+
+    advice.textContent=
+      d.advice ||
+      "Verify important requests independently before taking action.";
+
+  }catch(e){
+
+    scoreEl.textContent="ERROR";
+
+    scoreEl.className="score high";
+
+    levelEl.textContent="CHECK FAILED";
+
+    const li=document.createElement("li");
+
+    li.textContent=
+      e.message ||
+      "Unable to connect to FraudShield API.";
+
+    ul.appendChild(li);
+
+    advice.textContent=
+      "Check your internet connection and try again.";
+
+  }
+
+};
+
 </script>
+
 </body>
 </html>
+```
