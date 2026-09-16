@@ -246,7 +246,46 @@ document.getElementById("check").onclick=async()=>{
       );
 
     }
+if(type==="relationship" && Array.isArray(d.connections)){
 
+  const oldConnections =
+    document.getElementById("connections");
+
+  if(oldConnections){
+    oldConnections.remove();
+  }
+
+  const connectionBox =
+    document.createElement("div");
+
+  connectionBox.id="connections";
+  connectionBox.style.marginTop="18px";
+
+  connectionBox.innerHTML =
+    "<strong>Connections found:</strong>";
+
+  const connectionList =
+    document.createElement("ul");
+
+  d.connections.forEach(connection=>{
+
+    const li =
+      document.createElement("li");
+
+    li.textContent =
+      typeof connection === "string"
+      ? connection
+      : JSON.stringify(connection);
+
+    connectionList.appendChild(li);
+
+  });
+
+  connectionBox.appendChild(connectionList);
+
+  box.appendChild(connectionBox);
+
+}
     const s=Number(d.score||0);
 
     scoreEl.textContent=s+"/100";
