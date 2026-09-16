@@ -198,7 +198,11 @@ tabs.forEach(t=>{
 });
 
 const FRAUDSHIELD_API = "https://fraudshield-api.lightchimes.workers.dev";
-function apiTypeFor(type){ return type==="url"?"website":type; }
+function apiTypeFor(type){
+  if(type==="url") return "website";
+  if(type==="relationship") return "relationship";
+  return type;
+}
 document.getElementById("check").onclick=async()=>{ const text=input.value.trim(), box=document.getElementById("result"), scoreEl=document.getElementById("score"), levelEl=document.getElementById("level"), ul=document.getElementById("signals"), advice=document.getElementById("advice"); box.style.display="block"; ul.innerHTML=""; scoreEl.textContent="Checking..."; levelEl.textContent=""; advice.textContent="FraudShield is checking..."; if(!text){scoreEl.textContent="0/100";levelEl.textContent="LOWER RISK";ul.innerHTML="<li>Nothing was entered.</li>";advice.textContent="Enter something to check.";return;} try{const r=await fetch(FRAUDSHIELD_API,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({type:apiTypeFor(type),input:text})}); const d=await r.json(); if(!r.ok) throw new Error(d.error||"API request failed."); const s=Number(d.score||0); scoreEl.textContent=s+"/100"; scoreEl.className="score "+(s>=70?"high":s>=40?"medium":"low"); levelEl.textContent=d.level||"LOWER RISK"; (Array.isArray(d.signals)?d.signals:["No major warning signs were detected."]).forEach(x=>{const li=document.createElement("li");li.textContent=x;ul.appendChild(li);}); advice.textContent=d.advice||"Verify important requests independently before taking action.";}catch(e){scoreEl.textContent="ERROR";scoreEl.className="score high";levelEl.textContent="CHECK FAILED";const li=document.createElement("li");li.textContent=e.message||"Unable to connect to FraudShield API.";ul.appendChild(li);advice.textContent="Check your internet connection and try again.";} };
 </script>
 </body>
