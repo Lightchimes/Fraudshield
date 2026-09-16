@@ -238,7 +238,32 @@ document.getElementById("check").onclick=async()=>{
     });
 
     const d=await r.json();
+if(type==="relationship" && Array.isArray(d.connections)){
 
+  const connectionBox=document.createElement("div");
+
+  connectionBox.style.marginTop="18px";
+
+  connectionBox.innerHTML=
+    "<strong>Connections found:</strong>";
+
+  const connectionList=document.createElement("ul");
+
+  d.connections.forEach(connection=>{
+
+    const li=document.createElement("li");
+
+    li.textContent=connection;
+
+    connectionList.appendChild(li);
+
+  });
+
+  connectionBox.appendChild(connectionList);
+
+  box.appendChild(connectionBox);
+
+}
     if(!r.ok){
 
       throw new Error(
