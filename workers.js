@@ -1753,6 +1753,9 @@ const uniqueSignals = [
   ...new Set(signals)
 ];
 
+const hasWarningSignals =
+  score > 0;
+
 return {
   type: "account",
   ...risk,
