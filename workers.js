@@ -1428,11 +1428,13 @@ const ipqsResponse = await fetch(
     ...risk,
     signals,
     advice:
-      risk.score >= 70
-        ? "Treat this number as high risk. Do not send money, OTPs, passwords, or banking information."
-        : risk.score >= 40
-        ? "Use caution and independently verify the caller before trusting requests for money or sensitive information."
-        : "No major warning signs were detected by the current phone checks."
+  risk.score >= 70
+    ? "Treat this account as high risk. Do not send money, passwords, OTPs, PINs, recovery codes, or banking information. Verify the account through the platform's official channels."
+    : risk.score >= 40
+    ? "Use caution. Do not rely on profile names, badges, photos, or claims of being official. Verify the account through an independent official channel."
+    : hasWarningSignals
+    ? "Some caution signals were detected. Verify the account independently before trusting important claims or requests."
+    : "No major warning signs were detected by the current account checks. This does not prove the account is genuine; verify important accounts independently."
   };
 }
 
