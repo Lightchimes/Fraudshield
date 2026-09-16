@@ -1454,6 +1454,11 @@ function analyzeAccount(input) {
       "No account or profile information was supplied."
     ],
     advice:
+      "Enter an account username, profile information, platform, or message to analyze."
+  };
+}
+    ],
+    advice:
       risk.score >= 70
         ? "Treat this account as high risk. Do not send money, passwords, OTPs, PINs, recovery codes, or banking information. Verify the account through the platform's official channels."
         : risk.score >= 40
