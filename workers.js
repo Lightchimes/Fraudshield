@@ -1649,7 +1649,19 @@ if (jobRecruitment) {
     "The account contains job, recruitment, employment, or hiring-related language."
   );
 }
+// Personal information request detection
+const personalInfoRequest =
+  /personal information|personal details|date of birth|home address|residential address|identity document|id card|passport|bank details|bank account|account number|national id|nin|bvn/i.test(
+    lower
+  );
 
+if (personalInfoRequest) {
+  score += 15;
+
+  signals.push(
+    "The account requests personal or identity information that should be verified before sharing."
+  );
+}
 if (
   jobRecruitment &&
   /no interview|required fee|registration fee|application fee|pay.*job|pay.*position|send.*fee/i.test(
