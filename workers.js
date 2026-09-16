@@ -1447,14 +1447,16 @@ function analyzeAccount(input) {
   const signals = [];
 
   if (!text) {
-    return {
-      type: "account",
-      ...getRisk(20),
-      signals: [
-        "No account or profile information was supplied."
-      ],
-      advice:
-      risk.score >= 70
+  return {
+    type: "account",
+    ...getRisk(20),
+    signals: [
+      "No account or profile information was supplied."
+    ],
+    advice:
+      "Enter an account username, profile information, platform, or message to analyze."
+  };
+}
         ? "Treat this account as high risk. Do not send money, passwords, OTPs, PINs, recovery codes, or banking information. Verify the account through the platform's official channels."
         : risk.score >= 40
         ? "Use caution. Do not rely on profile names, badges, photos, or claims of being official. Verify the account through an independent official channel."
