@@ -2134,11 +2134,16 @@ export default {
             env
           );
       } else if (
-        type === "account"
-      ) {
-        result =
-          await analyzeAccount(input);
-      } else {
+  type === "account"
+) {
+  result =
+    await analyzeAccount(input);
+} else if (
+  type === "relationship"
+) {
+  result =
+    analyzeRelationship(input);
+} else {
         return response(
           {
             error:
