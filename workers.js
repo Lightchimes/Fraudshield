@@ -1825,8 +1825,8 @@ function analyzeRelationship(input) {
   // Extract usernames
   // -----------------------------
   const usernames = text.match(
-    /@[a-z0-9._-]{4,100}/gi
-  ) || [];
+  /(?<![\w.])@[a-z0-9._-]{4,100}/gi
+) || [];
 
   if (usernames.length > 0) {
     connections.push(
