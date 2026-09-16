@@ -2147,7 +2147,7 @@ export default {
         return response(
           {
             error:
-              "Unknown analysis type. Use website, email, message, phone, or account."
+              "Unknown analysis type. Use website, email, message, phone, account, or relationship."
           },
           400
         );
