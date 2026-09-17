@@ -1227,12 +1227,11 @@ if (!ipqsKey) {
 } else {
   try {
       const ipqsUrl =
-  "https://www.ipqualityscore.com/api/json/phone" +
-  "?key=" +
+  "https://www.ipqualityscore.com/api/json/phone/" +
   encodeURIComponent(ipqsKey) +
-  "&phone=" +
+  "/" +
   encodeURIComponent(ipqsNumber) +
-  "&country=NG";
+  "?country=NG";
 
 const ipqsResponse = await fetch(
   ipqsUrl,
