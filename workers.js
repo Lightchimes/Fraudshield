@@ -1216,23 +1216,34 @@ async function analyzePhone(input, env) {
       ? "+" + numberOnly
       : original;
 
+  const ipqsKey =
+    env && env.IPQS_API_KEY
+      ? String(env.IPQS_API_KEY).trim()
+      : "";
 
-const ipqsUrl =
-  "https://www.ipqualityscore.com/api/json/phone" +
-  "?phone=" +
-  encodeURIComponent(ipqsNumber) +
-  "&country=NG";
+  if (!ipqsKey) {
+    signals.push(
+      "IPQS reputation check was skipped because the IPQS API key is not available to the Worker."
+    );
+  } else {
+    try {
+      const ipqsUrl =
+        "https://www.ipqualityscore.com/api/json/phone" +
+        "?phone=" +
+        encodeURIComponent(ipqsNumber) +
+        "&country=NG";
 
-const ipqsResponse = await fetch(
-  ipqsUrl,
-  {
-    method: "GET",
-    headers: {
-      "Accept": "application/json",
-      "IPQS-KEY": ipqsKey
-    }
-  }
-);
+      const ipqsResponse = await fetch(
+        ipqsUrl,
+        {
+          method: "GET",
+          headers: {
+            "Accept": "application/json",
+            "IPQS-KEY": ipqsKey
+          }
+        }
+      );
+
       const raw =
         await ipqsResponse.text();
 
