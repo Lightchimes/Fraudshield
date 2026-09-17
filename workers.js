@@ -1421,34 +1421,24 @@ const ipqsResponse = await fetch(
     }
   }
 
-  const risk = getRisk(score);
-const hasWarningSignals =
-  score > 0;
+    const risk = getRisk(score);
+
+  const hasWarningSignals =
+    score > 0;
+
   return {
     type: "phone",
     ...risk,
     signals,
     advice:
-  risk.score >= 70
-    ? "Treat this account as high risk. Do not send money, passwords, OTPs, PINs, recovery codes, or banking information. Verify the account through the platform's official channels."
-    : risk.score >= 40
-    ? "Use caution. Do not rely on profile names, badges, photos, or claims of being official. Verify the account through an independent official channel."
-    const hasWarningSignals =
-  score > 0;
-
-return {
-  type: "account",
-  ...risk,
-  signals: uniqueSignals,
-  advice:
-    risk.score >= 70
-      ? "Treat this account as high risk. Do not send money, passwords, OTPs, PINs, recovery codes, or banking information. Verify the account through the platform's official channels."
-      : risk.score >= 40
-      ? "Use caution. Do not rely on profile names, badges, photos, or claims of being official. Verify the account through an independent official channel."
-      : hasWarningSignals
-      ? "Some caution signals were detected. Verify the account independently before trusting important claims or requests."
-      : "No major warning signs were detected by the current account checks. This does not prove the account is genuine; verify important accounts independently."
-};
+      risk.score >= 70
+        ? "Treat this phone number as high risk. Do not send money, passwords, OTPs, PINs, recovery codes, or banking information. Verify the caller through an independent official channel."
+        : risk.score >= 40
+        ? "Use caution. Do not rely on the caller's claims or identity. Verify the phone number independently before taking important action."
+        : hasWarningSignals
+        ? "Some caution signals were detected for this phone number. Verify the caller independently before trusting important claims or requests."
+        : "No major warning signs were detected by the current phone-number checks. This does not prove the number is genuine."
+  };
 }
 
 function analyzeAccount(input) {
