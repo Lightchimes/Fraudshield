@@ -1216,10 +1216,20 @@ async function analyzePhone(input, env) {
       ? "+" + numberOnly
       : original;
 
-  const ipqsKey =
-    env && env.IPQS_API_KEY
-      ? String(env.IPQS_API_KEY).trim()
-      : "";
+ const ipqsKey =
+  env && env.IPQS_API_KEY
+    ? String(env.IPQS_API_KEY).trim()
+    : "";
+
+if (!ipqsKey) {
+  signals.push(
+    "DIAGNOSTIC: IPQS_API_KEY is NOT available to the Worker at runtime."
+  );
+} else {
+  signals.push(
+    "DIAGNOSTIC: IPQS_API_KEY is available to the Worker at runtime."
+  );
+} 
 
   if (!ipqsKey) {
     signals.push(
