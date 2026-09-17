@@ -1238,21 +1238,21 @@ if (!ipqsKey) {
   } else {
     try {
       const ipqsUrl =
-        "https://www.ipqualityscore.com/api/json/phone" +
-        "?phone=" +
-        encodeURIComponent(ipqsNumber) +
-        "&country=NG";
+  "https://www.ipqualityscore.com/api/json/phone/" +
+  encodeURIComponent(ipqsKey) +
+  "/" +
+  encodeURIComponent(ipqsNumber) +
+  "?country=NG";
 
-      const ipqsResponse = await fetch(
-        ipqsUrl,
-        {
-          method: "GET",
-          headers: {
-            "Accept": "application/json",
-            "IPQS-KEY": ipqsKey
-          }
-        }
-      );
+const ipqsResponse = await fetch(
+  ipqsUrl,
+  {
+    method: "GET",
+    headers: {
+      "Accept": "application/json"
+    }
+  }
+);
 
       const raw =
         await ipqsResponse.text();
