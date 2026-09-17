@@ -1228,7 +1228,9 @@ if (!ipqsKey) {
   try {
       const ipqsUrl =
   "https://ipqualityscore.com/api/json/phone" +
-  "?phone=" +
+  "?key=" +
+  encodeURIComponent(ipqsKey) +
+  "&phone=" +
   encodeURIComponent(ipqsNumber) +
   "&country=NG";
 
@@ -1237,8 +1239,7 @@ const ipqsResponse = await fetch(
   {
     method: "GET",
     headers: {
-      "Accept": "application/json",
-      "IPQS-KEY": ipqsKey
+      "Accept": "application/json"
     }
   }
 );
