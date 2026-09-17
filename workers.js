@@ -1217,28 +1217,19 @@ async function analyzePhone(input, env) {
       : original;
 
 
-const ipqsKey =
-  env && env.IPQS_API_KEY
-    ? String(env.IPQS_API_KEY).trim()
-    : "";
-
-if (!ipqsKey) {
-  // No IPQS key available.
-} else {
-  try {
-      const ipqsUrl =
-  "https://www.ipqualityscore.com/api/json/phone/" +
-  encodeURIComponent(ipqsKey) +
-  "/" +
+const ipqsUrl =
+  "https://www.ipqualityscore.com/api/json/phone" +
+  "?phone=" +
   encodeURIComponent(ipqsNumber) +
-  "?country=NG";
+  "&country=NG";
 
 const ipqsResponse = await fetch(
   ipqsUrl,
   {
     method: "GET",
     headers: {
-      "Accept": "application/json"
+      "Accept": "application/json",
+      "IPQS-KEY": ipqsKey
     }
   }
 );
