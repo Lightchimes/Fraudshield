@@ -1456,13 +1456,7 @@ function analyzeAccount(input) {
       "No account or profile information was supplied."
     ],
     advice:
-  risk.score >= 70
-    ? "Treat this phone number as high risk. Do not send money, passwords, OTPs, PINs, recovery codes, or banking information. Verify the caller through an independent official channel."
-    : risk.score >= 40
-    ? "Use caution. Do not rely on the caller's claims or identity. Verify the phone number independently before taking important action."
-    : hasWarningSignals
-    ? "Some caution signals were detected for this phone number. Verify the caller independently before trusting important claims or requests."
-    : "No major warning signs were detected by the current phone-number checks. This does not prove the number is genuine."
+      "Enter an account username, profile information, platform, or message to analyze."
   };
 }
 
