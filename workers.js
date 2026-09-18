@@ -1357,7 +1357,9 @@ if (data.honeypot === true) {
   signals.push(
     "IPQS identifies this phone number as a potential honeypot or trap number."
   );
-}        if (data.active === false) {
+}        
+
+if (data.active === false) {
           score += 15;
 
           signals.push(
