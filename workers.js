@@ -1333,53 +1333,7 @@ signals.push(
   "/40."
 );
 
-        if (data.recent_abuse === true) {
-          score += 25;
-
-          signals.push(
-            "IPQS reports recent abuse associated with this number."
-          );
-        }
-
-        if (data.risky === true) {
-          score += 20;
-
-          signals.push(
-            "IPQS marks this phone number as risky."
-          );
-        }
-
-        if (data.spammer === true) {
-          score += 25;
-
-          signals.push(
-            "IPQS identifies this number as a possible spammer."
-          );
-        }
-if (data.leaked === true) {
-  score += 10;
-
-  signals.push(
-    "IPQS reports that this phone number has appeared in a recent data breach or compromise."
-  );
-}
       
-
-if (data.active === false) {
-          score += 15;
-
-          signals.push(
-            "IPQS reports that the phone line is not active."
-          );
-        }
-
-        if (data.valid === false) {
-          score += 20;
-
-          signals.push(
-            "IPQS reports that the phone number is not valid."
-          );
-        }
 
         if (data.VOIP === true) {
           signals.push(
