@@ -1306,15 +1306,31 @@ const ipqsResponse = await fetch(
 // The remaining 40% is reserved for FraudShield's own signals
 // and future user/crowd reports.
 
-const ipqsRisk = Math.max(0, Math.min(100, fraudScore));
-const ipqsContribution = Math.round(ipqsRisk * 0.6);
+const ipqsRisk =
+  Math.max(0, Math.min(100, fraudScore));
 
-score += ipqsContribution;
+const ipqsContribution =
+  Math.round(ipqsRisk * 0.6);
+
+// FraudShield's own rules can contribute
+// a maximum of 40 points.
+const fraudShieldRuleContribution =
+  Math.min(40, score);
+
+score =
+  fraudShieldRuleContribution +
+  ipqsContribution;
 
 signals.push(
-  "IPQS fraud score contribution: " +
+  "IPQS contribution: " +
   ipqsContribution +
   "/60."
+);
+
+signals.push(
+  "FraudShield rule contribution: " +
+  fraudShieldRuleContribution +
+  "/40."
 );
 
         if (data.recent_abuse === true) {
