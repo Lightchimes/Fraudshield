@@ -1337,15 +1337,9 @@ signals.push(
 
       
 
-        if (data.VOIP === true) {
-  score += 10;
-
+      if (data.VOIP === true) {
   signals.push(
     "IPQS identifies this number as a VOIP number."
-  );
-
-  signals.push(
-    "FraudShield added 10 points because the number is identified as VOIP."
   );
 }
 
