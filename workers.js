@@ -1344,7 +1344,13 @@ const ipqsResponse = await fetch(
             "IPQS identifies this number as a possible spammer."
           );
         }
+if (data.leaked === true) {
+  score += 10;
 
+  signals.push(
+    "IPQS reports that this phone number has appeared in a recent data breach or compromise."
+  );
+}
         if (data.active === false) {
           score += 15;
 
