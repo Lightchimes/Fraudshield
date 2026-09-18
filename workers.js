@@ -1326,7 +1326,9 @@ signals.push(
   ipqsContribution +
   "/60."
 );
-
+signals.push(
+  "FraudShield scoring: IPQS reputation contributes up to 60 points, while FraudShield's own detection rules contribute up to 40 points."
+);
 signals.push(
   "FraudShield rule contribution: " +
   fraudShieldRuleContribution +
