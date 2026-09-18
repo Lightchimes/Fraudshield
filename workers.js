@@ -1221,15 +1221,6 @@ async function analyzePhone(input, env) {
     ? String(env.IPQS_API_KEY).trim()
     : "";
 
-if (!ipqsKey) {
-  signals.push(
-    "DIAGNOSTIC: IPQS_API_KEY is NOT available to the Worker at runtime."
-  );
-} else {
-  signals.push(
-    "DIAGNOSTIC: IPQS_API_KEY is available to the Worker at runtime."
-  );
-} 
 
   if (!ipqsKey) {
     signals.push(
