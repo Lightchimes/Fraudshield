@@ -1414,7 +1414,19 @@ signals.push(
         : "No major warning signs were detected by the current phone-number checks. This does not prove the number is genuine."
   };
 }
-
+if (risk.score >= 70) {
+  signals.push(
+    "FraudShield assessment: Multiple risk indicators were detected. Take extra care and verify the caller independently."
+  );
+} else if (risk.score >= 40) {
+  signals.push(
+    "FraudShield assessment: Some risk indicators were detected. Verify the caller independently before taking important action."
+  );
+} else {
+  signals.push(
+    "FraudShield assessment: Few risk indicators were detected by the current checks. Still verify the caller before taking important action."
+  );
+}
 function analyzeAccount(input) {
   const text = String(input || "").trim();
   const lower = text.toLowerCase();
