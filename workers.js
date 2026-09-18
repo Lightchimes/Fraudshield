@@ -1301,25 +1301,21 @@ const ipqsResponse = await fetch(
         const fraudScore =
           Number(data.fraud_score || 0);
 
-        if (fraudScore >= 90) {
-          score += 60;
+        // FraudShield transparent scoring:
+// 60% of the final score comes from the IPQS fraud score.
+// The remaining 40% is reserved for FraudShield's own signals
+// and future user/crowd reports.
 
-          signals.push(
-            "IPQS reports a very high phone fraud score."
-          );
-        } else if (fraudScore >= 85) {
-          score += 50;
+const ipqsRisk = Math.max(0, Math.min(100, fraudScore));
+const ipqsContribution = Math.round(ipqsRisk * 0.6);
 
-          signals.push(
-            "IPQS reports a high phone fraud score."
-          );
-        } else if (fraudScore >= 75) {
-          score += 35;
+score += ipqsContribution;
 
-          signals.push(
-            "IPQS reports an elevated phone fraud score."
-          );
-        }
+signals.push(
+  "IPQS fraud score contribution: " +
+  ipqsContribution +
+  "/60."
+);
 
         if (data.recent_abuse === true) {
           score += 25;
