@@ -1411,9 +1411,10 @@ if (risk.score >= 70) {
   );
 } else {
   signals.push(
-    "FraudShield assessment: Few risk indicators were detected by the current checks. Still verify the caller before taking important action."
+    "FraudShield assessment: No significant risk indicators were detected by the current checks. Still verify the caller before taking important action."
   );
 }
+  
   return {
     type: "phone",
     ...risk,
