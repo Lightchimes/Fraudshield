@@ -1351,13 +1351,7 @@ if (data.leaked === true) {
     "IPQS reports that this phone number has appeared in a recent data breach or compromise."
   );
 }
-if (data.honeypot === true) {
-  score += 25;
-
-  signals.push(
-    "IPQS identifies this phone number as a potential honeypot or trap number."
-  );
-}        
+      
 
 if (data.active === false) {
           score += 15;
