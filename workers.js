@@ -1517,7 +1517,7 @@ async function analyzePhone(input, env) {
     ? String(env.IPQS_API_KEY).trim()
     : "";
 
-
+let ipqsContribution = 0;
   if (!ipqsKey) {
     signals.push(
       "IPQS reputation check was skipped because the IPQS API key is not available to the Worker."
