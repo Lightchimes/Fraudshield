@@ -1457,7 +1457,10 @@ const ipqsContribution =
 // FraudShield's own rules can contribute
 // a maximum of 40 points.
 const fraudShieldRuleContribution =
-  Math.min(40, score);
+  Math.min(
+    40,
+    score + crowd.communityPoints
+  );
 
 score =
   fraudShieldRuleContribution +
