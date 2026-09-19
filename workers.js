@@ -1606,6 +1606,52 @@ const crowd = await getCrowdIntelligence(
   env
 );
 
+
+const ipqsRisk =
+  Math.max(0, Math.min(100, fraudScore));
+
+const ipqsContribution =
+  Math.round(ipqsRisk * 0.6);
+
+// FraudShield's own rules can contribute
+// a maximum of 40 points.
+const fraudShieldRuleContribution =
+  Math.min(
+    40,
+    score + crowd.communityPoints
+  );
+
+score =
+  fraudShieldRuleContribution +
+  ipqsContribution;
+
+signals.push(
+  "IPQS contribution: " +
+  ipqsContribution +
+  "/60."
+);
+signals.push(
+  "FraudShield scoring: IPQS reputation contributes up to 60 points, while FraudShield's own detection rules contribute up to 40 points."
+);
+signals.push(
+  "FraudShield rule contribution: " +
+fraudShieldRuleContribution +
+"/40, including community intelligence."
+);
+
+      
+
+      if (data.VOIP === true) {
+  signals.push(
+    "IPQS identifies this number as a VOIP number."
+  );
+}
+const crowd =
+  await getCrowdIntelligence(
+    normalizedPhone,
+    env
+  );
+
 if (crowd.scamReports > 0) {
   signals.push(
     "Community reports: " +
@@ -1656,46 +1702,6 @@ if (crowd.communityPoints > 0) {
     "/40."
   );
 }
-const ipqsRisk =
-  Math.max(0, Math.min(100, fraudScore));
-
-const ipqsContribution =
-  Math.round(ipqsRisk * 0.6);
-
-// FraudShield's own rules can contribute
-// a maximum of 40 points.
-const fraudShieldRuleContribution =
-  Math.min(
-    40,
-    score + crowd.communityPoints
-  );
-
-score =
-  fraudShieldRuleContribution +
-  ipqsContribution;
-
-signals.push(
-  "IPQS contribution: " +
-  ipqsContribution +
-  "/60."
-);
-signals.push(
-  "FraudShield scoring: IPQS reputation contributes up to 60 points, while FraudShield's own detection rules contribute up to 40 points."
-);
-signals.push(
-  "FraudShield rule contribution: " +
-fraudShieldRuleContribution +
-"/40, including community intelligence."
-);
-
-      
-
-      if (data.VOIP === true) {
-  signals.push(
-    "IPQS identifies this number as a VOIP number."
-  );
-}
-
         if (data.prepaid === true) {
           signals.push(
             "IPQS identifies this number as prepaid."
