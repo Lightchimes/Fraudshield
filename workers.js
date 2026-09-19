@@ -1704,7 +1704,88 @@ ipqsContribution =
       );
     }
   }
+const crowd =
+  await getCrowdIntelligence(
+    ipqsNumber,
+    env
+  );
 
+if (crowd.scamReports > 0) {
+  signals.push(
+    "Community reports: " +
+    crowd.scamReports +
+    " scam report(s)."
+  );
+}
+
+if (crowd.suspiciousReports > 0) {
+  signals.push(
+    "Community reports: " +
+    crowd.suspiciousReports +
+    " suspicious report(s)."
+  );
+}
+
+if (crowd.safeReports > 0) {
+  signals.push(
+    "Community reports: " +
+    crowd.safeReports +
+    " safe report(s)."
+  );
+}
+
+if (crowd.totalReports > 0) {
+  signals.push(
+    "Community reports received: " +
+    crowd.totalReports +
+    "."
+  );
+
+  signals.push(
+    "Community confidence: " +
+    crowd.confidence +
+    "."
+  );
+
+  signals.push(
+    "Community pattern: " +
+    crowd.pattern
+  );
+}
+
+if (crowd.communityPoints > 0) {
+  signals.push(
+    "Community intelligence contribution: " +
+    crowd.communityPoints +
+    "/40."
+  );
+}
+
+const fraudShieldRuleContribution =
+  Math.min(
+    40,
+    score + crowd.communityPoints
+  );
+
+score =
+  fraudShieldRuleContribution +
+  ipqsContribution;
+
+signals.push(
+  "IPQS contribution: " +
+  ipqsContribution +
+  "/60."
+);
+
+signals.push(
+  "FraudShield scoring: IPQS reputation contributes up to 60 points, while FraudShield's own detection rules contribute up to 40 points."
+);
+
+signals.push(
+  "FraudShield rule contribution: " +
+  fraudShieldRuleContribution +
+  "/40, including community intelligence."
+);
     const risk = getRisk(score);
 
   const hasWarningSignals =
