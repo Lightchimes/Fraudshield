@@ -1572,13 +1572,14 @@ if (
     reportId;
 
   const reportData = {
-    phone: normalizedPhone,
-    verdict,
-    comment,
-    reporterHash,
-    createdAt:
-      new Date().toISOString()
-  };
+  phone: normalizedPhone,
+  verdict,
+  evidenceType,
+  comment,
+  reporterHash,
+  createdAt:
+    new Date().toISOString()
+};
 
   await env.FRAUDSHIELD_REPORTS.put(
     reportKey,
