@@ -1413,7 +1413,7 @@ const ipqsResponse = await fetch(
 // The remaining 40% is reserved for FraudShield's own signals
 // and future user/crowd reports.
 const crowd = await getCrowdIntelligence(
-  normalizedPhone,
+  ipqsNumber,
   env
 );
 
