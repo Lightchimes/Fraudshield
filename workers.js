@@ -1646,62 +1646,11 @@ fraudShieldRuleContribution +
     "IPQS identifies this number as a VOIP number."
   );
 }
-const crowd =
-  await getCrowdIntelligence(
-    normalizedPhone,
-    env
-  );
+const ipqsRisk =
+  Math.max(0, Math.min(100, fraudScore));
 
-if (crowd.scamReports > 0) {
-  signals.push(
-    "Community reports: " +
-    crowd.scamReports +
-    " scam report(s)."
-  );
-}
-
-if (crowd.suspiciousReports > 0) {
-  signals.push(
-    "Community reports: " +
-    crowd.suspiciousReports +
-    " suspicious report(s)."
-  );
-}
-
-if (crowd.safeReports > 0) {
-  signals.push(
-    "Community reports: " +
-    crowd.safeReports +
-    " safe report(s)."
-  );
-}
-
-if (crowd.totalReports > 0) {
-  signals.push(
-    "Community reports received: " +
-    crowd.totalReports +
-    "."
-  );
-
-  signals.push(
-    "Community confidence: " +
-    crowd.confidence +
-    "."
-  );
-
-  signals.push(
-    "Community pattern: " +
-    crowd.pattern
-  );
-}
-
-if (crowd.communityPoints > 0) {
-  signals.push(
-    "Community intelligence contribution: " +
-    crowd.communityPoints +
-    "/40."
-  );
-}
+ipqsContribution =
+  Math.round(ipqsRisk * 0.6);
         if (data.prepaid === true) {
           signals.push(
             "IPQS identifies this number as prepaid."
