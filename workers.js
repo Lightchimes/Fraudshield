@@ -1402,7 +1402,26 @@ async function saveCrowdReport(report, env, request) {
     String(report.comment || "")
       .trim()
       .slice(0, 500);
+const allowedEvidenceTypes = [
+  "message",
+  "call",
+  "link"
+];
 
+const evidenceType =
+  String(report.evidenceType || "")
+    .trim()
+    .toLowerCase();
+
+if (
+  !allowedEvidenceTypes.includes(
+    evidenceType
+  )
+) {
+  result.message =
+    "Invalid evidence type. Use message, call, or link.";
+  return result;
+}
   /*
    * --------------------------------------------------
    * REPORTER FINGERPRINT
