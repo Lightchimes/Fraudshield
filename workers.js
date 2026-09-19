@@ -1129,7 +1129,10 @@ async function getCrowdIntelligence(phone, env) {
     scamReports: 0,
     suspiciousReports: 0,
     safeReports: 0,
-    communityPoints: 0
+    totalReports: 0,
+    communityPoints: 0,
+    confidence: "NONE",
+    pattern: "No community reports found."
   };
 
   if (!env.FRAUDSHIELD_REPORTS || !phone) {
@@ -1137,42 +1140,129 @@ async function getCrowdIntelligence(phone, env) {
   }
 
   try {
-    const prefix = "report:" + phone + ":";
-    const listed = await env.FRAUDSHIELD_REPORTS.list({
-      prefix,
-      limit: 100
-    });
+    const prefix =
+      "report:" + phone + ":";
+
+    const listed =
+      await env.FRAUDSHIELD_REPORTS.list({
+        prefix,
+        limit: 100
+      });
 
     for (const key of listed.keys) {
-      const report = await env.FRAUDSHIELD_REPORTS.get(key.name, {
-        type: "json"
-      });
+      const report =
+        await env.FRAUDSHIELD_REPORTS.get(
+          key.name,
+          {
+            type: "json"
+          }
+        );
 
       if (!report) continue;
 
       if (report.verdict === "scam") {
         result.scamReports++;
-      } else if (report.verdict === "suspicious") {
+      } else if (
+        report.verdict === "suspicious"
+      ) {
         result.suspiciousReports++;
-      } else if (report.verdict === "safe") {
+      } else if (
+        report.verdict === "safe"
+      ) {
         result.safeReports++;
       }
     }
 
-    const scamPoints = Math.min(
-      30,
-      result.scamReports * 10
-    );
+    result.totalReports =
+      result.scamReports +
+      result.suspiciousReports +
+      result.safeReports;
 
-    const suspiciousPoints = Math.min(
-      10,
-      result.suspiciousReports * 3
-    );
+    /*
+     * Crowd Intelligence v2
+     *
+     * Reports do not automatically make a number
+     * fraudulent. Confidence increases as independent
+     * reports accumulate.
+     *
+     * Scam reports:
+     * 1st  = 10 points
+     * 2nd  = 7 points
+     * 3rd  = 5 points
+     * 4th+ = 2 points each
+     *
+     * Suspicious reports:
+     * 1st  = 3 points
+     * 2nd  = 2 points
+     * 3rd+ = 1 point each
+     *
+     * Maximum community contribution = 40 points.
+     */
+
+    let scamPoints = 0;
+
+    if (result.scamReports >= 1) {
+      scamPoints += 10;
+    }
+
+    if (result.scamReports >= 2) {
+      scamPoints += 7;
+    }
+
+    if (result.scamReports >= 3) {
+      scamPoints += 5;
+    }
+
+    if (result.scamReports >= 4) {
+      scamPoints +=
+        (result.scamReports - 3) * 2;
+    }
+
+    let suspiciousPoints = 0;
+
+    if (result.suspiciousReports >= 1) {
+      suspiciousPoints += 3;
+    }
+
+    if (result.suspiciousReports >= 2) {
+      suspiciousPoints += 2;
+    }
+
+    if (result.suspiciousReports >= 3) {
+      suspiciousPoints +=
+        (result.suspiciousReports - 2);
+    }
 
     result.communityPoints =
-      Math.min(40, scamPoints + suspiciousPoints);
+      Math.min(
+        40,
+        scamPoints + suspiciousPoints
+      );
+
+    /*
+     * Confidence is based on the amount of
+     * community evidence available.
+     */
+    if (result.totalReports === 0) {
+      result.confidence = "NONE";
+      result.pattern =
+        "No community reports found.";
+    } else if (result.totalReports === 1) {
+      result.confidence = "UNVERIFIED";
+      result.pattern =
+        "One community report has been received. This is unverified evidence.";
+    } else if (result.totalReports === 2) {
+      result.confidence = "EMERGING";
+      result.pattern =
+        "Multiple community reports have been received. An emerging pattern may be present.";
+    } else {
+      result.confidence = "PATTERN";
+      result.pattern =
+        "Multiple community reports indicate a community pattern. This is still not proof of fraud.";
+    }
 
     return result;
+
   } catch (error) {
     return result;
   }
