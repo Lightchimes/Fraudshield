@@ -2585,7 +2585,7 @@ let result;
         return response(
           {
             error:
-              "Unknown analysis type. Use website, email, message, phone, account, or relationship."
+  "Unknown analysis type. Use website, email, message, phone, account, relationship, or report."
           },
           400
         );
