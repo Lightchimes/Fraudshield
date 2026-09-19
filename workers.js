@@ -2257,16 +2257,43 @@ export default {
           body.input || ""
         ).trim();
 
-      if (!input) {
-        return response(
-          {
-            error: "Input is required."
-          },
-          400
-        );
-      }
+    if (!input && type !== "report") {
+  return response(
+    {
+      error: "Input is required."
+    },
+    400
+  );
+}
 
-      let result;
+if (type === "report") {
+  try {
+    const report =
+      body.report || {};
+
+    const reportResult =
+      await saveCrowdReport(
+        report.phone,
+        report.verdict,
+        report.comment,
+        env
+      );
+
+    return response(
+      reportResult
+    );
+  } catch (error) {
+    return response(
+      {
+        success: false,
+        error: String(error)
+      },
+      400
+    );
+  }
+}
+
+let result;
 
       if (
         type === "website" ||
