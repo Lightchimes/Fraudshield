@@ -2627,10 +2627,9 @@ if (type === "report") {
 
     const reportResult =
       await saveCrowdReport(
-        report.phone,
-        report.verdict,
-        report.comment,
-        env
+        report,
+        env,
+        request
       );
 
     return response(
