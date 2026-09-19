@@ -1412,7 +1412,42 @@ const ipqsResponse = await fetch(
 // 60% of the final score comes from the IPQS fraud score.
 // The remaining 40% is reserved for FraudShield's own signals
 // and future user/crowd reports.
+const crowd = await getCrowdIntelligence(
+  normalizedPhone,
+  env
+);
 
+if (crowd.scamReports > 0) {
+  signals.push(
+    "Community reports: " +
+    crowd.scamReports +
+    " scam report(s)."
+  );
+}
+
+if (crowd.suspiciousReports > 0) {
+  signals.push(
+    "Community reports: " +
+    crowd.suspiciousReports +
+    " suspicious report(s)."
+  );
+}
+
+if (crowd.safeReports > 0) {
+  signals.push(
+    "Community reports: " +
+    crowd.safeReports +
+    " safe report(s)."
+  );
+}
+
+if (crowd.communityPoints > 0) {
+  signals.push(
+    "Community intelligence contribution: " +
+    crowd.communityPoints +
+    "/40."
+  );
+}
 const ipqsRisk =
   Math.max(0, Math.min(100, fraudScore));
 
