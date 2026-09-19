@@ -1132,7 +1132,8 @@ async function getCrowdIntelligence(phone, env) {
     totalReports: 0,
     communityPoints: 0,
     confidence: "NONE",
-    pattern: "No community reports found."
+    pattern: "No community reports found.",
+    evidenceTypes: []
   };
 
   if (!env.FRAUDSHIELD_REPORTS || !phone) {
@@ -1148,6 +1149,9 @@ async function getCrowdIntelligence(phone, env) {
         prefix,
         limit: 100
       });
+
+    const evidenceTypes =
+      new Set();
 
     for (const key of listed.keys) {
       const report =
@@ -1171,6 +1175,26 @@ async function getCrowdIntelligence(phone, env) {
       ) {
         result.safeReports++;
       }
+
+      /*
+       * Evidence > Verdict
+       *
+       * Only recognized evidence types count
+       * toward community intelligence.
+       *
+       * Old reports without evidenceType are
+       * treated as legacy evidence and do not
+       * create a new evidence category.
+       */
+      if (
+        report.evidenceType === "message" ||
+        report.evidenceType === "call" ||
+        report.evidenceType === "link"
+      ) {
+        evidenceTypes.add(
+          report.evidenceType
+        );
+      }
     }
 
     result.totalReports =
@@ -1178,59 +1202,79 @@ async function getCrowdIntelligence(phone, env) {
       result.suspiciousReports +
       result.safeReports;
 
+    result.evidenceTypes =
+      Array.from(evidenceTypes);
+
     /*
-     * Crowd Intelligence v2
+     * --------------------------------------------------
+     * COMMUNITY INTELLIGENCE V3
+     * --------------------------------------------------
      *
-     * Reports do not automatically make a number
-     * fraudulent. Confidence increases as independent
-     * reports accumulate.
+     * Evidence diversity matters more than the
+     * number of repeated verdicts.
      *
      * Scam reports:
-     * 1st  = 10 points
-     * 2nd  = 7 points
-     * 3rd  = 5 points
-     * 4th+ = 2 points each
      *
-     * Suspicious reports:
-     * 1st  = 3 points
-     * 2nd  = 2 points
-     * 3rd+ = 1 point each
+     * 1 unique evidence type  = 10 points
+     * 2 unique evidence types = 17 points
+     * 3 unique evidence types = 22 points
      *
-     * Maximum community contribution = 40 points.
+     * Suspicious reports can add:
+     *
+     * 1 unique evidence type  = 3 points
+     * 2 unique evidence types = 5 points
+     * 3 unique evidence types = 6 points
+     *
+     * Maximum community contribution = 40.
      */
+
+    const evidenceCount =
+      evidenceTypes.size;
 
     let scamPoints = 0;
 
-    if (result.scamReports >= 1) {
+    if (
+      result.scamReports > 0 &&
+      evidenceCount >= 1
+    ) {
       scamPoints += 10;
     }
 
-    if (result.scamReports >= 2) {
+    if (
+      result.scamReports > 0 &&
+      evidenceCount >= 2
+    ) {
       scamPoints += 7;
     }
 
-    if (result.scamReports >= 3) {
+    if (
+      result.scamReports > 0 &&
+      evidenceCount >= 3
+    ) {
       scamPoints += 5;
-    }
-
-    if (result.scamReports >= 4) {
-      scamPoints +=
-        (result.scamReports - 3) * 2;
     }
 
     let suspiciousPoints = 0;
 
-    if (result.suspiciousReports >= 1) {
+    if (
+      result.suspiciousReports > 0 &&
+      evidenceCount >= 1
+    ) {
       suspiciousPoints += 3;
     }
 
-    if (result.suspiciousReports >= 2) {
+    if (
+      result.suspiciousReports > 0 &&
+      evidenceCount >= 2
+    ) {
       suspiciousPoints += 2;
     }
 
-    if (result.suspiciousReports >= 3) {
-      suspiciousPoints +=
-        (result.suspiciousReports - 2);
+    if (
+      result.suspiciousReports > 0 &&
+      evidenceCount >= 3
+    ) {
+      suspiciousPoints += 1;
     }
 
     result.communityPoints =
@@ -1240,25 +1284,46 @@ async function getCrowdIntelligence(phone, env) {
       );
 
     /*
-     * Confidence is based on the amount of
-     * community evidence available.
+     * --------------------------------------------------
+     * CONFIDENCE
+     * --------------------------------------------------
      */
+
     if (result.totalReports === 0) {
       result.confidence = "NONE";
+
       result.pattern =
         "No community reports found.";
-    } else if (result.totalReports === 1) {
+
+    } else if (
+      evidenceCount === 0
+    ) {
       result.confidence = "UNVERIFIED";
+
       result.pattern =
-        "One community report has been received. This is unverified evidence.";
-    } else if (result.totalReports === 2) {
+        "Community reports exist, but no recognized evidence type has been supplied.";
+
+    } else if (
+      evidenceCount === 1
+    ) {
+      result.confidence = "UNVERIFIED";
+
+      result.pattern =
+        "Community evidence has been received from one evidence category. This remains unverified.";
+
+    } else if (
+      evidenceCount === 2
+    ) {
       result.confidence = "EMERGING";
+
       result.pattern =
-        "Multiple community reports have been received. An emerging pattern may be present.";
+        "Community evidence has been received from multiple evidence categories. An emerging pattern may be present.";
+
     } else {
       result.confidence = "PATTERN";
+
       result.pattern =
-        "Multiple community reports indicate a community pattern. This is still not proof of fraud.";
+        "Community evidence spans multiple evidence categories. This indicates a stronger community pattern, but it is still not proof of fraud.";
     }
 
     return result;
