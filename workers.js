@@ -1512,12 +1512,13 @@ async function analyzePhone(input, env) {
       ? "+" + numberOnly
       : original;
 
- const ipqsKey =
-  env && env.IPQS_API_KEY
-    ? String(env.IPQS_API_KEY).trim()
-    : "";
+  let ipqsContribution = 0;
 
-let ipqsContribution = 0;
+  const ipqsKey =
+    env && env.IPQS_API_KEY
+      ? String(env.IPQS_API_KEY).trim()
+      : "";
+
   if (!ipqsKey) {
     signals.push(
       "IPQS reputation check was skipped because the IPQS API key is not available to the Worker."
@@ -1525,20 +1526,21 @@ let ipqsContribution = 0;
   } else {
     try {
       const ipqsUrl =
-  "https://www.ipqualityscore.com/api/json/phone?phone=" +
-  encodeURIComponent(ipqsNumber) +
-  "&country=NG";
+        "https://www.ipqualityscore.com/api/json/phone?phone=" +
+        encodeURIComponent(ipqsNumber) +
+        "&country=NG";
 
-const ipqsResponse = await fetch(
-  ipqsUrl,
-  {
-    method: "GET",
-    headers: {
-      "Accept": "application/json",
-      "IPQS-KEY": ipqsKey
-    }
-  }
-);
+      const ipqsResponse =
+        await fetch(
+          ipqsUrl,
+          {
+            method: "GET",
+            headers: {
+              "Accept": "application/json",
+              "IPQS-KEY": ipqsKey
+            }
+          }
+        );
 
       const raw =
         await ipqsResponse.text();
@@ -1571,10 +1573,12 @@ const ipqsResponse = await fetch(
           "IPQS request failed. " +
           errorMessage
         );
+
       } else if (!data) {
         signals.push(
           "IPQS returned a successful HTTP response, but the response was not valid JSON."
         );
+
       } else if (data.success === false) {
         let errorMessage =
           data.message ||
@@ -1593,64 +1597,28 @@ const ipqsResponse = await fetch(
           "IPQS could not complete the reputation check: " +
           errorMessage
         );
+
       } else {
         const fraudScore =
           Number(data.fraud_score || 0);
 
-        // FraudShield transparent scoring:
-// 60% of the final score comes from the IPQS fraud score.
-// The remaining 40% is reserved for FraudShield's own signals
-// and future user/crowd reports.
-const crowd = await getCrowdIntelligence(
-  ipqsNumber,
-  env
-);
+        const ipqsRisk =
+          Math.max(
+            0,
+            Math.min(100, fraudScore)
+          );
 
+        ipqsContribution =
+          Math.round(
+            ipqsRisk * 0.6
+          );
 
-const ipqsRisk =
-  Math.max(0, Math.min(100, fraudScore));
+        if (data.VOIP === true) {
+          signals.push(
+            "IPQS identifies this number as a VOIP number."
+          );
+        }
 
-const ipqsContribution =
-  Math.round(ipqsRisk * 0.6);
-
-// FraudShield's own rules can contribute
-// a maximum of 40 points.
-const fraudShieldRuleContribution =
-  Math.min(
-    40,
-    score + crowd.communityPoints
-  );
-
-score =
-  fraudShieldRuleContribution +
-  ipqsContribution;
-
-signals.push(
-  "IPQS contribution: " +
-  ipqsContribution +
-  "/60."
-);
-signals.push(
-  "FraudShield scoring: IPQS reputation contributes up to 60 points, while FraudShield's own detection rules contribute up to 40 points."
-);
-signals.push(
-  "FraudShield rule contribution: " +
-fraudShieldRuleContribution +
-"/40, including community intelligence."
-);
-
-      
-
-      if (data.VOIP === true) {
-  signals.push(
-    "IPQS identifies this number as a VOIP number."
-  );
-}
-const ipqsRisk =
-  Math.max(0, Math.min(100, fraudScore));
-
-ipqsContribution =
-  Math.round(ipqsRisk * 0.6);
         if (data.prepaid === true) {
           signals.push(
             "IPQS identifies this number as prepaid."
@@ -1697,6 +1665,7 @@ ipqsContribution =
           );
         }
       }
+
     } catch (error) {
       signals.push(
         "IPQS connection error: " +
@@ -1704,106 +1673,122 @@ ipqsContribution =
       );
     }
   }
-const crowd =
-  await getCrowdIntelligence(
-    ipqsNumber,
-    env
-  );
 
-if (crowd.scamReports > 0) {
+  /*
+   * Crowd Intelligence
+   * Runs independently of IPQS.
+   */
+
+  const crowd =
+    await getCrowdIntelligence(
+      ipqsNumber,
+      env
+    );
+
+  if (crowd.scamReports > 0) {
+    signals.push(
+      "Community reports: " +
+      crowd.scamReports +
+      " scam report(s)."
+    );
+  }
+
+  if (crowd.suspiciousReports > 0) {
+    signals.push(
+      "Community reports: " +
+      crowd.suspiciousReports +
+      " suspicious report(s)."
+    );
+  }
+
+  if (crowd.safeReports > 0) {
+    signals.push(
+      "Community reports: " +
+      crowd.safeReports +
+      " safe report(s)."
+    );
+  }
+
+  if (crowd.totalReports > 0) {
+    signals.push(
+      "Community reports received: " +
+      crowd.totalReports +
+      "."
+    );
+
+    signals.push(
+      "Community confidence: " +
+      crowd.confidence +
+      "."
+    );
+
+    signals.push(
+      "Community pattern: " +
+      crowd.pattern
+    );
+  }
+
+  if (crowd.communityPoints > 0) {
+    signals.push(
+      "Community intelligence contribution: " +
+      crowd.communityPoints +
+      "/40."
+    );
+  }
+
+  /*
+   * Final FraudShield scoring
+   *
+   * IPQS = maximum 60 points
+   * FraudShield rules + community = maximum 40 points
+   */
+
+  const fraudShieldRuleContribution =
+    Math.min(
+      40,
+      score + crowd.communityPoints
+    );
+
+  score =
+    fraudShieldRuleContribution +
+    ipqsContribution;
+
   signals.push(
-    "Community reports: " +
-    crowd.scamReports +
-    " scam report(s)."
-  );
-}
-
-if (crowd.suspiciousReports > 0) {
-  signals.push(
-    "Community reports: " +
-    crowd.suspiciousReports +
-    " suspicious report(s)."
-  );
-}
-
-if (crowd.safeReports > 0) {
-  signals.push(
-    "Community reports: " +
-    crowd.safeReports +
-    " safe report(s)."
-  );
-}
-
-if (crowd.totalReports > 0) {
-  signals.push(
-    "Community reports received: " +
-    crowd.totalReports +
-    "."
+    "IPQS contribution: " +
+    ipqsContribution +
+    "/60."
   );
 
   signals.push(
-    "Community confidence: " +
-    crowd.confidence +
-    "."
+    "FraudShield scoring: IPQS reputation contributes up to 60 points, while FraudShield's own detection rules contribute up to 40 points."
   );
 
   signals.push(
-    "Community pattern: " +
-    crowd.pattern
-  );
-}
-
-if (crowd.communityPoints > 0) {
-  signals.push(
-    "Community intelligence contribution: " +
-    crowd.communityPoints +
-    "/40."
-  );
-}
-
-const fraudShieldRuleContribution =
-  Math.min(
-    40,
-    score + crowd.communityPoints
+    "FraudShield rule contribution: " +
+    fraudShieldRuleContribution +
+    "/40, including community intelligence."
   );
 
-score =
-  fraudShieldRuleContribution +
-  ipqsContribution;
-
-signals.push(
-  "IPQS contribution: " +
-  ipqsContribution +
-  "/60."
-);
-
-signals.push(
-  "FraudShield scoring: IPQS reputation contributes up to 60 points, while FraudShield's own detection rules contribute up to 40 points."
-);
-
-signals.push(
-  "FraudShield rule contribution: " +
-  fraudShieldRuleContribution +
-  "/40, including community intelligence."
-);
-    const risk = getRisk(score);
+  const risk =
+    getRisk(score);
 
   const hasWarningSignals =
     score > 0;
-if (risk.score >= 70) {
-  signals.push(
-    "FraudShield assessment: Multiple risk indicators were detected. Take extra care and verify the caller independently."
-  );
-} else if (risk.score >= 40) {
-  signals.push(
-    "FraudShield assessment: Some risk indicators were detected. Verify the caller independently before taking important action."
-  );
-} else {
-  signals.push(
-    "FraudShield assessment: No significant risk indicators were detected by the current checks. Still verify the caller before taking important action."
-  );
-}
-  
+
+  if (risk.score >= 70) {
+    signals.push(
+      "FraudShield assessment: Multiple risk indicators were detected. Take extra care and verify the caller independently."
+    );
+  } else if (risk.score >= 40) {
+    signals.push(
+      "FraudShield assessment: Some risk indicators were detected. Verify the caller independently before taking important action."
+    );
+  } else {
+    signals.push(
+      "FraudShield assessment: No significant risk indicators were detected by the current checks. Still verify the caller before taking important action."
+    );
+  }
+
   return {
     type: "phone",
     ...risk,
