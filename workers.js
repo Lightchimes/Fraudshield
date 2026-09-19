@@ -1630,6 +1630,25 @@ if (crowd.safeReports > 0) {
   );
 }
 
+if (crowd.totalReports > 0) {
+  signals.push(
+    "Community reports received: " +
+    crowd.totalReports +
+    "."
+  );
+
+  signals.push(
+    "Community confidence: " +
+    crowd.confidence +
+    "."
+  );
+
+  signals.push(
+    "Community pattern: " +
+    crowd.pattern
+  );
+}
+
 if (crowd.communityPoints > 0) {
   signals.push(
     "Community intelligence contribution: " +
