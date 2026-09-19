@@ -1476,8 +1476,8 @@ signals.push(
 );
 signals.push(
   "FraudShield rule contribution: " +
-  fraudShieldRuleContribution +
-  "/40."
+fraudShieldRuleContribution +
+"/40, including community intelligence."
 );
 
       
