@@ -2261,7 +2261,7 @@ export default {
       return response({
         service: "FraudShield API",
         status: "online",
-        version: "3.2"
+        version: "3.3"
       });
     }
 
