@@ -1194,24 +1194,53 @@ async function saveCrowdReport(phone, verdict, comment, env) {
     throw new Error("Invalid report type.");
   }
 
-  const cleanPhone = String(phone || "").trim();
+  const rawPhone =
+    String(phone || "").trim();
 
-  if (!cleanPhone) {
+  if (!rawPhone) {
     throw new Error("Phone number is required.");
   }
 
-  const cleanComment = String(comment || "")
-    .trim()
-    .slice(0, 500);
+  // Normalize Nigerian phone numbers
+  const digits =
+    rawPhone.replace(/\D/g, "");
+
+  let normalizedPhone = "";
+
+  if (
+    digits.length === 11 &&
+    digits.startsWith("0")
+  ) {
+    normalizedPhone =
+      "+234" + digits.slice(1);
+  } else if (
+    digits.length >= 10 &&
+    digits.length <= 15 &&
+    digits.startsWith("234")
+  ) {
+    normalizedPhone =
+      "+" + digits;
+  } else {
+    throw new Error(
+      "Enter a valid Nigerian phone number."
+    );
+  }
+
+  const cleanComment =
+    String(comment || "")
+      .trim()
+      .slice(0, 500);
 
   const reportId =
     Date.now().toString(36) +
     "-" +
-    Math.random().toString(36).slice(2, 10);
+    Math.random()
+      .toString(36)
+      .slice(2, 10);
 
   const key =
     "report:" +
-    cleanPhone +
+    normalizedPhone +
     ":" +
     reportId;
 
@@ -1220,7 +1249,8 @@ async function saveCrowdReport(phone, verdict, comment, env) {
     JSON.stringify({
       verdict,
       comment: cleanComment,
-      createdAt: new Date().toISOString()
+      createdAt:
+        new Date().toISOString()
     }),
     {
       expirationTtl: 7776000
@@ -1229,7 +1259,8 @@ async function saveCrowdReport(phone, verdict, comment, env) {
 
   return {
     success: true,
-    message: "Report submitted successfully."
+    message:
+      "Report submitted successfully."
   };
 }
 async function analyzePhone(input, env) {
