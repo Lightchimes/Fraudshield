@@ -1181,7 +1181,9 @@ async function getCrowdIntelligence(phone, env) {
 
 async function saveCrowdReport(phone, verdict, comment, env) {
   if (!env.FRAUDSHIELD_REPORTS) {
-    throw new Error("Crowd intelligence storage is not connected.");
+    throw new Error(
+      "Crowd intelligence storage is not connected."
+    );
   }
 
   const allowedVerdicts = [
@@ -1231,6 +1233,60 @@ async function saveCrowdReport(phone, verdict, comment, env) {
       .trim()
       .slice(0, 500);
 
+  // Create a fingerprint for this exact report.
+  const fingerprintSource =
+    normalizedPhone +
+    "|" +
+    verdict +
+    "|" +
+    cleanComment;
+
+  const encoded =
+    new TextEncoder().encode(
+      fingerprintSource
+    );
+
+  const hashBuffer =
+    await crypto.subtle.digest(
+      "SHA-256",
+      encoded
+    );
+
+  const hashArray =
+    Array.from(
+      new Uint8Array(hashBuffer)
+    );
+
+  const fingerprint =
+    hashArray
+      .map(
+        byte =>
+          byte
+            .toString(16)
+            .padStart(2, "0")
+      )
+      .join("");
+
+  // Prevent the exact same report
+  // from being submitted repeatedly.
+  const duplicateKey =
+    "duplicate:" +
+    fingerprint;
+
+  const existing =
+    await env.FRAUDSHIELD_REPORTS.get(
+      duplicateKey
+    );
+
+  if (existing) {
+    return {
+      success: false,
+      duplicate: true,
+      message:
+        "This exact report was already submitted recently."
+    };
+  }
+
   const reportId =
     Date.now().toString(36) +
     "-" +
@@ -1238,14 +1294,15 @@ async function saveCrowdReport(phone, verdict, comment, env) {
       .toString(36)
       .slice(2, 10);
 
-  const key =
+  const reportKey =
     "report:" +
     normalizedPhone +
     ":" +
     reportId;
 
+  // Store the actual report.
   await env.FRAUDSHIELD_REPORTS.put(
-    key,
+    reportKey,
     JSON.stringify({
       verdict,
       comment: cleanComment,
@@ -1257,8 +1314,19 @@ async function saveCrowdReport(phone, verdict, comment, env) {
     }
   );
 
+  // Store the duplicate fingerprint
+  // for 24 hours.
+  await env.FRAUDSHIELD_REPORTS.put(
+    duplicateKey,
+    "1",
+    {
+      expirationTtl: 86400
+    }
+  );
+
   return {
     success: true,
+    duplicate: false,
     message:
       "Report submitted successfully."
   };
