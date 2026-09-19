@@ -1124,7 +1124,114 @@ async function analyzeMessage(input) {
         : "No major warning signs were detected by the current message checks."
   };
 }
+async function getCrowdIntelligence(phone, env) {
+  const result = {
+    scamReports: 0,
+    suspiciousReports: 0,
+    safeReports: 0,
+    communityPoints: 0
+  };
 
+  if (!env.FRAUDSHIELD_REPORTS || !phone) {
+    return result;
+  }
+
+  try {
+    const prefix = "report:" + phone + ":";
+    const listed = await env.FRAUDSHIELD_REPORTS.list({
+      prefix,
+      limit: 100
+    });
+
+    for (const key of listed.keys) {
+      const report = await env.FRAUDSHIELD_REPORTS.get(key.name, {
+        type: "json"
+      });
+
+      if (!report) continue;
+
+      if (report.verdict === "scam") {
+        result.scamReports++;
+      } else if (report.verdict === "suspicious") {
+        result.suspiciousReports++;
+      } else if (report.verdict === "safe") {
+        result.safeReports++;
+      }
+    }
+
+    const scamPoints = Math.min(
+      30,
+      result.scamReports * 10
+    );
+
+    const suspiciousPoints = Math.min(
+      10,
+      result.suspiciousReports * 3
+    );
+
+    result.communityPoints =
+      Math.min(40, scamPoints + suspiciousPoints);
+
+    return result;
+  } catch (error) {
+    return result;
+  }
+}
+
+
+async function saveCrowdReport(phone, verdict, comment, env) {
+  if (!env.FRAUDSHIELD_REPORTS) {
+    throw new Error("Crowd intelligence storage is not connected.");
+  }
+
+  const allowedVerdicts = [
+    "scam",
+    "suspicious",
+    "safe"
+  ];
+
+  if (!allowedVerdicts.includes(verdict)) {
+    throw new Error("Invalid report type.");
+  }
+
+  const cleanPhone = String(phone || "").trim();
+
+  if (!cleanPhone) {
+    throw new Error("Phone number is required.");
+  }
+
+  const cleanComment = String(comment || "")
+    .trim()
+    .slice(0, 500);
+
+  const reportId =
+    Date.now().toString(36) +
+    "-" +
+    Math.random().toString(36).slice(2, 10);
+
+  const key =
+    "report:" +
+    cleanPhone +
+    ":" +
+    reportId;
+
+  await env.FRAUDSHIELD_REPORTS.put(
+    key,
+    JSON.stringify({
+      verdict,
+      comment: cleanComment,
+      createdAt: new Date().toISOString()
+    }),
+    {
+      expirationTtl: 7776000
+    }
+  );
+
+  return {
+    success: true,
+    message: "Report submitted successfully."
+  };
+}
 async function analyzePhone(input, env) {
   const original = String(input || "").trim();
 
