@@ -17,7 +17,7 @@ function response(data, status = 200) {
 function getRisk(score) {
   const finalScore = Math.max(0, Math.min(100, Math.round(score)));
 
-  let level = "LOWER RISK";
+  let level = "NO SIGNALS FOUND";
 
   if (finalScore >= 70) {
     level = "HIGH RISK";
