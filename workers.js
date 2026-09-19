@@ -1269,11 +1269,23 @@ async function getCrowdIntelligence(phone, env) {
 }
 
 
-async function saveCrowdReport(phone, verdict, comment, env) {
+async function saveCrowdReport(report, env, request) {
+  const result = {
+    success: false,
+    duplicate: false,
+    rateLimited: false,
+    message: ""
+  };
+
   if (!env.FRAUDSHIELD_REPORTS) {
-    throw new Error(
-      "Crowd intelligence storage is not connected."
-    );
+    result.message =
+      "Crowd Intelligence storage is not available.";
+    return result;
+  }
+
+  if (!report || typeof report !== "object") {
+    result.message = "Invalid report.";
+    return result;
   }
 
   const allowedVerdicts = [
@@ -1282,107 +1294,192 @@ async function saveCrowdReport(phone, verdict, comment, env) {
     "safe"
   ];
 
+  const verdict =
+    String(report.verdict || "")
+      .trim()
+      .toLowerCase();
+
   if (!allowedVerdicts.includes(verdict)) {
-    throw new Error("Invalid report type.");
+    result.message =
+      "Invalid verdict. Use scam, suspicious, or safe.";
+    return result;
   }
 
-  const rawPhone =
-    String(phone || "").trim();
+  let phone =
+    String(report.phone || "")
+      .replace(/\D/g, "");
 
-  if (!rawPhone) {
-    throw new Error("Phone number is required.");
-  }
-
-  // Normalize Nigerian phone numbers
-  const digits =
-    rawPhone.replace(/\D/g, "");
-
-  let normalizedPhone = "";
-
+  /*
+   * Normalize Nigerian phone numbers.
+   */
   if (
-    digits.length === 11 &&
-    digits.startsWith("0")
+    phone.length === 11 &&
+    phone.startsWith("0")
   ) {
-    normalizedPhone =
-      "+234" + digits.slice(1);
+    phone =
+      "234" + phone.slice(1);
   } else if (
-    digits.length >= 10 &&
-    digits.length <= 15 &&
-    digits.startsWith("234")
+    phone.startsWith("234") &&
+    phone.length >= 13 &&
+    phone.length <= 15
   ) {
-    normalizedPhone =
-      "+" + digits;
+    // Already normalized.
   } else {
-    throw new Error(
-      "Enter a valid Nigerian phone number."
-    );
+    result.message =
+      "Invalid Nigerian phone number.";
+    return result;
   }
 
-  const cleanComment =
-    String(comment || "")
+  const normalizedPhone =
+    "+" + phone;
+
+  const comment =
+    String(report.comment || "")
       .trim()
       .slice(0, 500);
 
-  // Create a fingerprint for this exact report.
-  const fingerprintSource =
-    normalizedPhone +
-    "|" +
-    verdict +
-    "|" +
-    cleanComment;
+  /*
+   * --------------------------------------------------
+   * REPORTER FINGERPRINT
+   * --------------------------------------------------
+   *
+   * For website users we use IP + User-Agent.
+   *
+   * Later, the Telegram bot can provide the Telegram
+   * user ID as a stronger reporter identifier.
+   */
+  const ip =
+    request?.headers?.get(
+      "CF-Connecting-IP"
+    ) || "unknown-ip";
 
-  const encoded =
-    new TextEncoder().encode(
-      fingerprintSource
-    );
+  const userAgent =
+    request?.headers?.get(
+      "User-Agent"
+    ) || "unknown-agent";
 
-  const hashBuffer =
+  const suppliedReporterId =
+    String(report.reporterId || "")
+      .trim();
+
+  /*
+   * If Telegram later supplies reporterId,
+   * it can be used. Otherwise fall back to
+   * Cloudflare IP + User-Agent.
+   */
+  const reporterSource =
+    suppliedReporterId
+      ? "reporter:" + suppliedReporterId
+      : "ip:" + ip + "|ua:" + userAgent;
+
+  const reporterHashBuffer =
     await crypto.subtle.digest(
       "SHA-256",
-      encoded
+      new TextEncoder().encode(
+        reporterSource
+      )
     );
 
-  const hashArray =
+  const reporterHash =
     Array.from(
-      new Uint8Array(hashBuffer)
-    );
-
-  const fingerprint =
-    hashArray
+      new Uint8Array(
+        reporterHashBuffer
+      )
+    )
       .map(
-        byte =>
-          byte
-            .toString(16)
+        b =>
+          b.toString(16)
             .padStart(2, "0")
       )
       .join("");
 
-  // Prevent the exact same report
-  // from being submitted repeatedly.
+  /*
+   * --------------------------------------------------
+   * REPORTER RATE LIMIT
+   * --------------------------------------------------
+   *
+   * Maximum:
+   * 2 reports from the same reporter
+   * against the same phone within 7 days.
+   */
+  const reporterPrefix =
+    "reporter-limit:" +
+    reporterHash +
+    ":" +
+    normalizedPhone +
+    ":";
+
+  const reporterReports =
+    await env.FRAUDSHIELD_REPORTS.list({
+      prefix: reporterPrefix,
+      limit: 10
+    });
+
+  if (
+    reporterReports.keys.length >= 2
+  ) {
+    result.rateLimited = true;
+    result.message =
+      "Report limit reached. This reporter can submit at most 2 reports for this phone number every 7 days.";
+    return result;
+  }
+
+  /*
+   * --------------------------------------------------
+   * EXACT DUPLICATE PROTECTION
+   * --------------------------------------------------
+   */
+  const fingerprintInput =
+    normalizedPhone +
+    "|" +
+    verdict +
+    "|" +
+    comment;
+
+  const fingerprintBuffer =
+    await crypto.subtle.digest(
+      "SHA-256",
+      new TextEncoder().encode(
+        fingerprintInput
+      )
+    );
+
+  const fingerprint =
+    Array.from(
+      new Uint8Array(
+        fingerprintBuffer
+      )
+    )
+      .map(
+        b =>
+          b.toString(16)
+            .padStart(2, "0")
+      )
+      .join("");
+
   const duplicateKey =
     "duplicate:" +
     fingerprint;
 
-  const existing =
+  const existingDuplicate =
     await env.FRAUDSHIELD_REPORTS.get(
       duplicateKey
     );
 
-  if (existing) {
-    return {
-      success: false,
-      duplicate: true,
-      message:
-        "This exact report was already submitted recently."
-    };
+  if (existingDuplicate) {
+    result.duplicate = true;
+    result.message =
+      "This exact report was already submitted recently.";
+    return result;
   }
 
+  /*
+   * --------------------------------------------------
+   * SAVE REPORT
+   * --------------------------------------------------
+   */
   const reportId =
-    Date.now().toString(36) +
-    "-" +
-    Math.random()
-      .toString(36)
-      .slice(2, 10);
+    crypto.randomUUID();
 
   const reportKey =
     "report:" +
@@ -1390,36 +1487,64 @@ async function saveCrowdReport(phone, verdict, comment, env) {
     ":" +
     reportId;
 
-  // Store the actual report.
+  const reportData = {
+    phone: normalizedPhone,
+    verdict,
+    comment,
+    reporterHash,
+    createdAt:
+      new Date().toISOString()
+  };
+
   await env.FRAUDSHIELD_REPORTS.put(
     reportKey,
-    JSON.stringify({
-      verdict,
-      comment: cleanComment,
-      createdAt:
-        new Date().toISOString()
-    }),
+    JSON.stringify(reportData),
     {
-      expirationTtl: 7776000
+      expirationTtl:
+        60 * 60 * 24 * 90
     }
   );
 
-  // Store the duplicate fingerprint
-  // for 24 hours.
+  /*
+   * Exact duplicate protection:
+   * 24 hours.
+   */
   await env.FRAUDSHIELD_REPORTS.put(
     duplicateKey,
     "1",
     {
-      expirationTtl: 86400
+      expirationTtl:
+        60 * 60 * 24
     }
   );
 
-  return {
-    success: true,
-    duplicate: false,
-    message:
-      "Report submitted successfully."
-  };
+  /*
+   * Reporter + phone rate-limit record:
+   * 7 days.
+   */
+  const reporterLimitKey =
+    reporterPrefix +
+    reportId;
+
+  await env.FRAUDSHIELD_REPORTS.put(
+    reporterLimitKey,
+    JSON.stringify({
+      phone: normalizedPhone,
+      reporterHash,
+      createdAt:
+        new Date().toISOString()
+    }),
+    {
+      expirationTtl:
+        60 * 60 * 24 * 7
+    }
+  );
+
+  result.success = true;
+  result.message =
+    "Report submitted successfully.";
+
+  return result;
 }
 async function analyzePhone(input, env) {
   const original = String(input || "").trim();
